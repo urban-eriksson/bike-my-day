@@ -7,6 +7,11 @@ import { EmailButton } from "./email-button";
 
 export const metadata = { title: "Verdict — bike my day" };
 
+// Belt-and-braces: this page reads cookies (via the Supabase server client)
+// so Next.js already treats it as dynamic, but mark it explicitly so any
+// future change can't accidentally route it through the static cache.
+export const dynamic = "force-dynamic";
+
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
@@ -52,7 +57,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
     timezone: ride.timezone,
   };
 
-  const result = await runPreview(rideForVerdict, profile?.preferences ?? "");
+  const preferencesUsed = profile?.preferences ?? "";
+  const result = await runPreview(rideForVerdict, preferencesUsed);
 
   return (
     <Frame>
@@ -60,6 +66,16 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
         Verdict for <span className="font-medium text-gray-900">{ride.label}</span>:{" "}
         {ride.start_address} → {ride.end_address}
       </p>
+      <details className="mt-3 text-xs text-gray-500">
+        <summary className="cursor-pointer">
+          Preferences used ({preferencesUsed.length} chars)
+        </summary>
+        <pre className="mt-2 whitespace-pre-wrap rounded bg-gray-50 p-2 text-gray-700">
+          {preferencesUsed === ""
+            ? "(empty — Settings page has no preferences saved)"
+            : preferencesUsed}
+        </pre>
+      </details>
       <div className="mt-6">
         {result.ok ? (
           <>

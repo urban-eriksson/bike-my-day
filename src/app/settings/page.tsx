@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SettingsForm } from "./settings-form";
 
 export const metadata = { title: "Settings — bike my day" };
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
