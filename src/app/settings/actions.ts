@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { profilesTable } from "@/lib/supabase/profiles-shim";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type SaveProfileState = {
@@ -30,10 +29,9 @@ export async function saveProfile(
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await profilesTable(supabase).upsert(
-    { user_id: user.id, preferences },
-    { onConflict: "user_id" },
-  );
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ user_id: user.id, preferences }, { onConflict: "user_id" });
   if (error) return { status: "error", message: error.message };
 
   revalidatePath("/settings");

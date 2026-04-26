@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { nextOccurrence } from "@/lib/rides/next-occurrence";
-import { generateVerdict } from "@/lib/llm/verdict";
-import { profilesTable } from "@/lib/supabase/profiles-shim";
+import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createOpenMeteoProvider } from "@/lib/weather/openMeteo";
 import type { WeatherSnapshot } from "@/lib/weather/types";
+import { EmailButton } from "./email-button";
 
 export const metadata = { title: "Verdict — bike my day" };
 
@@ -36,20 +34,25 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const { data: profile } = await profilesTable(supabase)
+  const { data: profile } = await supabase
+    .from("profiles")
     .select("preferences")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const result = await runPreview({
-    rideLabel: String(ride.label),
-    start: { lat: Number(ride.start_lat), lon: Number(ride.start_lon) },
-    end: { lat: Number(ride.end_lat), lon: Number(ride.end_lon) },
-    timezone: String(ride.timezone),
-    daysOfWeek: ride.days_of_week as number[],
-    departLocalTime: String(ride.depart_local_time),
-    preferences: String(profile?.preferences ?? ""),
-  });
+  const rideForVerdict: RideForVerdict = {
+    id: ride.id,
+    label: ride.label,
+    start_lat: Number(ride.start_lat),
+    start_lon: Number(ride.start_lon),
+    end_lat: Number(ride.end_lat),
+    end_lon: Number(ride.end_lon),
+    depart_local_time: String(ride.depart_local_time),
+    days_of_week: ride.days_of_week as number[],
+    timezone: ride.timezone,
+  };
+
+  const result = await runPreview(rideForVerdict, profile?.preferences ?? "");
 
   return (
     <Frame>
@@ -59,7 +62,12 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
       </p>
       <div className="mt-6">
         {result.ok ? (
-          <Verdict text={result.text} usage={result.usage} snapshot={result.snapshot} />
+          <>
+            <Verdict text={result.text} usage={result.usage} snapshot={result.snapshot} />
+            <div className="mt-6">
+              <EmailButton rideId={ride.id} />
+            </div>
+          </>
         ) : (
           <p className="text-sm text-red-600">Could not generate verdict: {result.error}</p>
         )}
@@ -67,16 +75,6 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
     </Frame>
   );
 }
-
-type PreviewArgs = {
-  rideLabel: string;
-  start: { lat: number; lon: number };
-  end: { lat: number; lon: number };
-  timezone: string;
-  daysOfWeek: number[];
-  departLocalTime: string;
-  preferences: string;
-};
 
 type PreviewResult =
   | {
@@ -87,27 +85,9 @@ type PreviewResult =
     }
   | { ok: false; error: string };
 
-async function runPreview(args: PreviewArgs): Promise<PreviewResult> {
+async function runPreview(ride: RideForVerdict, preferences: string): Promise<PreviewResult> {
   try {
-    const at = nextOccurrence({
-      days_of_week: args.daysOfWeek,
-      depart_local_time: args.departLocalTime,
-      timezone: args.timezone,
-    });
-    const provider = createOpenMeteoProvider();
-    const snapshot = await provider.forecast({
-      lat: args.start.lat,
-      lon: args.start.lon,
-      at,
-      timezone: args.timezone,
-    });
-    const { text, usage } = await generateVerdict({
-      rideLabel: args.rideLabel,
-      start: args.start,
-      end: args.end,
-      preferences: args.preferences,
-      snapshot,
-    });
+    const { text, usage, snapshot } = await runVerdict(ride, { preferences });
     return { ok: true, text, usage, snapshot };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };

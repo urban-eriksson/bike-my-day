@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { profilesTable } from "@/lib/supabase/profiles-shim";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SettingsForm } from "./settings-form";
 
@@ -13,7 +12,8 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await profilesTable(supabase)
+  const { data: profile } = await supabase
+    .from("profiles")
     .select("preferences")
     .eq("user_id", user.id)
     .maybeSingle();
