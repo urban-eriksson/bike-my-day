@@ -44,6 +44,10 @@ yarn-error.log*
 /blob-report
 /playwright/.cache
 
+# supabase (per-developer CLI cache and local branches)
+supabase/.temp
+supabase/.branches
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
