@@ -24,14 +24,22 @@ export default async function DashboardPage() {
     <main className="mx-auto max-w-2xl px-6 py-12">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <form action={signOut}>
-          <button
-            type="submit"
+        <div className="flex items-center gap-3">
+          <Link
+            href="/settings"
             className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
           >
-            Sign out
-          </button>
-        </form>
+            Settings
+          </Link>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <p className="mt-2 text-sm text-gray-600">
@@ -71,12 +79,20 @@ export default async function DashboardPage() {
                       {r.active ? "" : " · paused"}
                     </div>
                   </div>
-                  <form action={deleteRide}>
-                    <input type="hidden" name="id" value={r.id} />
-                    <button type="submit" className="text-xs text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </form>
+                  <div className="flex flex-col items-end gap-1">
+                    <Link
+                      href={`/rides/${r.id}/preview`}
+                      className="text-xs font-medium text-gray-900 hover:underline"
+                    >
+                      Preview verdict
+                    </Link>
+                    <form action={deleteRide}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <button type="submit" className="text-xs text-red-600 hover:underline">
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </li>
             ))}
