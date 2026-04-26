@@ -1,11 +1,14 @@
 import { nextOccurrence } from "@/lib/rides/next-occurrence";
 
 /**
- * How many hours ahead of a ride the verdict goes out. With an hourly cron
- * and a 14h lead, a ride at 08:00 local on day D gets its email at ~18:00
- * local on day D-1 — late afternoon the night before, time to plan.
+ * How many hours ahead the cron looks for upcoming rides. Vercel's free plan
+ * caps cron frequency at once per day, so we run a single daily tick (08:00
+ * UTC by default — see vercel.json) and dispatch verdicts for every ride
+ * whose next occurrence falls in the next 24 hours. With the cron firing at
+ * the same wall-clock time every day, each (ride, occurrence) pair lands in
+ * exactly one tick's window.
  */
-export const DEFAULT_LEAD_HOURS = 14;
+export const DEFAULT_LOOKAHEAD_HOURS = 24;
 
 export type RideForCron = {
   id: string;
@@ -22,20 +25,17 @@ export type DueRide = {
 };
 
 /**
- * Select rides whose next occurrence falls inside the lead window
- * `(now + leadHours - 1h, now + leadHours]`. The window is exactly the cron
- * interval (1h) so each (ride, occurrence) pair fires at most once. The
- * notifications table's `unique (ride_id, scheduled_for)` constraint
- * idempotency-guards the second-line of defense (e.g., overlapping cron runs
- * or manual re-triggers).
+ * Select rides whose next occurrence falls inside `(now, now + lookaheadHours]`.
+ * The notifications table's `unique (ride_id, scheduled_for)` constraint is the
+ * second-line idempotency guard if a tick is ever retried or a ride is moved
+ * forward and re-fires.
  */
 export function selectDueRides(
   now: Date,
   rides: RideForCron[],
-  leadHours: number = DEFAULT_LEAD_HOURS,
+  lookaheadHours: number = DEFAULT_LOOKAHEAD_HOURS,
 ): DueRide[] {
-  const leadMs = leadHours * 60 * 60 * 1000;
-  const windowStart = leadMs - 60 * 60 * 1000;
+  const lookaheadMs = lookaheadHours * 60 * 60 * 1000;
   const due: DueRide[] = [];
   for (const ride of rides) {
     let scheduledFor: Date;
@@ -52,7 +52,7 @@ export function selectDueRides(
       continue; // skip rides with malformed config
     }
     const delta = scheduledFor.getTime() - now.getTime();
-    if (delta > windowStart && delta <= leadMs) {
+    if (delta > 0 && delta <= lookaheadMs) {
       due.push({ ride, scheduledFor });
     }
   }

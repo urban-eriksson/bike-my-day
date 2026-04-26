@@ -65,7 +65,19 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
           <>
             <Verdict text={result.text} usage={result.usage} snapshot={result.snapshot} />
             <div className="mt-6">
-              <EmailButton rideId={ride.id} />
+              <EmailButton
+                rideId={ride.id}
+                rideLabel={ride.label}
+                verdictText={result.text}
+                whenLocal={result.snapshot.as_of_local}
+                details={{
+                  temperatureC: result.snapshot.temperature_c,
+                  apparentTemperatureC: result.snapshot.apparent_temperature_c,
+                  precipitationMm: result.snapshot.precipitation_mm,
+                  windSpeedMs: result.snapshot.wind_speed_ms,
+                  windGustsMs: result.snapshot.wind_gusts_ms,
+                }}
+              />
             </div>
           </>
         ) : (
