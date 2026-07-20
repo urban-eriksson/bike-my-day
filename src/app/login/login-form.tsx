@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   sendLoginCode,
   verifyLoginCode,
@@ -13,11 +13,13 @@ const INITIAL_VERIFY: VerifyCodeState = { status: "idle" };
 
 /**
  * One form, two submit buttons routed to different server actions
- * (React 19 formAction). The email field stays editable throughout so
- * "Send a new code" always works, and the same value rides along with
- * the verify submission.
+ * (React 19 formAction). The email is a controlled input — React resets
+ * uncontrolled fields after each form action, which would blank it right
+ * when the code step appears. During the code step it turns read-only
+ * (not disabled: read-only fields still submit their value).
  */
 export function LoginForm({ next }: { next: string }) {
+  const [email, setEmail] = useState("");
   const [sendState, sendAction, sendPending] = useActionState(sendLoginCode, INITIAL_SEND);
   const [verifyState, verifyAction, verifyPending] = useActionState(
     verifyLoginCode,
@@ -39,27 +41,37 @@ export function LoginForm({ next }: { next: string }) {
         type="email"
         autoComplete="email"
         required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        readOnly={codeSent}
         disabled={pending}
-        className="rounded border border-gray-300 px-3 py-2 text-sm"
+        className={`rounded border border-gray-300 px-3 py-2 text-sm ${
+          codeSent ? "bg-gray-100 text-gray-500" : ""
+        }`}
         placeholder="you@example.com"
       />
+      {codeSent ? (
+        <a href="/login" className="-mt-1 text-xs text-gray-600 underline">
+          Use a different email
+        </a>
+      ) : null}
 
       {codeSent ? (
         <>
           <label htmlFor="token" className="text-sm font-medium">
-            6-digit code
+            One-time code
           </label>
           <input
             id="token"
             name="token"
             inputMode="numeric"
-            pattern="[0-9]{6}"
-            maxLength={6}
+            pattern="[0-9]{6,10}"
+            maxLength={10}
             autoComplete="one-time-code"
             required
             disabled={pending}
             className="rounded border border-gray-300 px-3 py-2 text-sm tracking-widest"
-            placeholder="123456"
+            placeholder="12345678"
           />
           <button
             type="submit"

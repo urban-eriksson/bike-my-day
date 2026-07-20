@@ -52,8 +52,9 @@ export async function verifyLoginCode(
   if (!email || !email.includes("@")) {
     return { status: "error", message: "Enter a valid email address." };
   }
-  if (!/^\d{6}$/.test(token)) {
-    return { status: "error", message: "Enter the 6-digit code from the email." };
+  // Supabase's OTP length is a project setting (6–10 digits).
+  if (!/^\d{6,10}$/.test(token)) {
+    return { status: "error", message: "Enter the code from the email (digits only)." };
   }
 
   const supabase = await createSupabaseServerClient();
