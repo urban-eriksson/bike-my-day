@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Solid background: required for maskable icons, and iOS flattens
+       transparency to black otherwise. -->
+  <rect width="512" height="512" fill="#0f172a" />
+  <circle cx="402" cy="112" r="42" fill="#fbbf24" />
+  <g stroke="#ffffff" stroke-width="22" stroke-linecap="round" fill="none">
+    <circle cx="150" cy="345" r="70" />
+    <circle cx="362" cy="345" r="70" />
+    <path d="M150 345 L256 345 L200 205 M256 345 L330 215 L362 345 M200 205 L310 215" />
+    <path d="M182 200 L218 200" />
+    <path d="M330 215 L344 182 L368 178" />
+  </g>
+</svg>

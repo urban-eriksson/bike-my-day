@@ -1,20 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { dispatch } from "@/lib/notify";
+import { dispatch, PushSubscriptionGoneError, type ChannelDestination } from "@/lib/notify";
 import { selectDueRides, type RideForCron } from "@/lib/cron/select-due";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 
 /**
- * Hourly cron entrypoint. Vercel sends `Authorization: Bearer ${CRON_SECRET}`
+ * Daily cron entrypoint. Vercel sends `Authorization: Bearer ${CRON_SECRET}`
  * automatically; reject anything else (this URL is public).
  *
  * Flow per tick:
  *   1. Find every active ride whose next occurrence is in the lead window.
- *   2. For each, look up the rider's email channel + preferences.
- *   3. Run the verdict pipeline, dispatch the email, persist a notifications
- *      row. The notifications.unique(ride_id, scheduled_for) constraint
- *      guarantees idempotency on retries / overlapping ticks.
+ *   2. For each, look up the rider's push subscriptions + preferences.
+ *   3. Run the verdict pipeline once, push it to every subscribed device
+ *      (pruning subscriptions the push service reports dead), persist a
+ *      notifications row. The notifications.unique(ride_id, scheduled_for)
+ *      constraint guarantees idempotency on retries / overlapping ticks.
  */
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
@@ -58,18 +59,37 @@ export async function GET(request: NextRequest) {
     .from("notification_channels")
     .select("id, user_id, kind, destination")
     .in("user_id", userIds.length > 0 ? userIds : ["00000000-0000-0000-0000-000000000000"])
-    .eq("kind", "email");
+    .eq("kind", "webpush");
   const { data: profiles } = await supabase
     .from("profiles")
     .select("user_id, preferences")
     .in("user_id", userIds.length > 0 ? userIds : ["00000000-0000-0000-0000-000000000000"]);
 
-  const channelByUser = new Map<string, { id: string; email: string }>();
+  // One entry per subscribed device; malformed jsonb rows are skipped.
+  type PushDevice = { id: string; destination: Extract<ChannelDestination, { kind: "webpush" }> };
+  const channelsByUser = new Map<string, PushDevice[]>();
   for (const c of channels ?? []) {
-    const dest = c.destination as { email?: unknown };
-    if (typeof dest?.email === "string") {
-      channelByUser.set(c.user_id, { id: c.id, email: dest.email });
+    const dest = c.destination as {
+      endpoint?: unknown;
+      keys?: { p256dh?: unknown; auth?: unknown };
+    };
+    if (
+      typeof dest?.endpoint !== "string" ||
+      typeof dest.keys?.p256dh !== "string" ||
+      typeof dest.keys?.auth !== "string"
+    ) {
+      continue;
     }
+    const devices = channelsByUser.get(c.user_id) ?? [];
+    devices.push({
+      id: c.id,
+      destination: {
+        kind: "webpush",
+        endpoint: dest.endpoint,
+        keys: { p256dh: dest.keys.p256dh, auth: dest.keys.auth },
+      },
+    });
+    channelsByUser.set(c.user_id, devices);
   }
   const prefsByUser = new Map<string, string>();
   for (const p of profiles ?? []) prefsByUser.set(p.user_id, p.preferences ?? "");
@@ -84,14 +104,14 @@ export async function GET(request: NextRequest) {
 
   for (const { ride: cronRide, scheduledFor } of due) {
     const fullRide = (cronRide as RideForCron & { fullRide: (typeof rides)[number] }).fullRide;
-    const channel = channelByUser.get(cronRide.user_id);
-    if (!channel) {
+    const devices = channelsByUser.get(cronRide.user_id) ?? [];
+    if (devices.length === 0) {
       results.push({
         ride_id: cronRide.id,
         user_id: cronRide.user_id,
         scheduled_for: scheduledFor.toISOString(),
         status: "skipped",
-        detail: "no email channel registered",
+        detail: "no push subscription",
       });
       continue;
     }
@@ -132,7 +152,7 @@ export async function GET(request: NextRequest) {
         user_id: cronRide.user_id,
         scheduled_for: scheduledFor.toISOString(),
         status: "dry_run",
-        detail: `would email ${channel.email}`,
+        detail: `would push to ${devices.length} device(s)`,
       });
       continue;
     }
@@ -142,26 +162,61 @@ export async function GET(request: NextRequest) {
         preferences: prefsByUser.get(cronRide.user_id) ?? "",
         now,
       });
-      await dispatch(
-        {
-          rideLabel: fullRide.label,
-          whenLocal: run.snapshot.as_of_local,
-          verdictText: run.text,
-          details: {
-            temperatureC: run.snapshot.temperature_c,
-            apparentTemperatureC: run.snapshot.apparent_temperature_c,
-            precipitationMm: run.snapshot.precipitation_mm,
-            windSpeedMs: run.snapshot.wind_speed_ms,
-            windGustsMs: run.snapshot.wind_gusts_ms,
-          },
+      const notification = {
+        rideLabel: fullRide.label,
+        whenLocal: run.snapshot.as_of_local,
+        verdictText: run.text,
+        details: {
+          temperatureC: run.snapshot.temperature_c,
+          apparentTemperatureC: run.snapshot.apparent_temperature_c,
+          precipitationMm: run.snapshot.precipitation_mm,
+          windSpeedMs: run.snapshot.wind_speed_ms,
+          windGustsMs: run.snapshot.wind_gusts_ms,
         },
-        { kind: "email", email: channel.email },
-      );
+      };
+
+      // One verdict, pushed to every device. Dead subscriptions (404/410 from
+      // the push service) are pruned so they stop consuming send attempts.
+      let firstSentChannelId: string | null = null;
+      let pruned = 0;
+      const failures: string[] = [];
+      for (const device of devices) {
+        try {
+          await dispatch(notification, device.destination);
+          firstSentChannelId ??= device.id;
+        } catch (err) {
+          if (err instanceof PushSubscriptionGoneError) {
+            await supabase.from("notification_channels").delete().eq("id", device.id);
+            pruned += 1;
+          } else {
+            failures.push(err instanceof Error ? err.message : String(err));
+          }
+        }
+      }
+      const sentCount = devices.length - pruned - failures.length;
+      const prunedSuffix = pruned > 0 ? `, pruned ${pruned} expired` : "";
+
+      if (sentCount === 0) {
+        results.push({
+          ride_id: cronRide.id,
+          user_id: cronRide.user_id,
+          scheduled_for: scheduledFor.toISOString(),
+          // All-expired is a user state (nothing to retry); any hard failure
+          // leaves sent_at unset so the next tick retries.
+          status: failures.length === 0 ? "skipped" : "error",
+          detail:
+            failures.length === 0
+              ? "all subscriptions expired"
+              : `push failed for all devices: ${failures[0]}${prunedSuffix}`,
+        });
+        continue;
+      }
+
       await supabase.from("notifications").upsert(
         {
           user_id: cronRide.user_id,
           ride_id: cronRide.id,
-          channel_id: channel.id,
+          channel_id: firstSentChannelId,
           scheduled_for: scheduledFor.toISOString(),
           forecast_json: run.snapshot as unknown as Json,
           verdict_text: run.text,
@@ -174,6 +229,7 @@ export async function GET(request: NextRequest) {
         user_id: cronRide.user_id,
         scheduled_for: scheduledFor.toISOString(),
         status: "sent",
+        detail: `pushed to ${sentCount}/${devices.length} device(s)${prunedSuffix}`,
       });
     } catch (err) {
       results.push({

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
-import { EmailButton } from "./email-button";
+import { PushButton } from "./push-button";
 
 export const metadata = { title: "Verdict — bike my day" };
 
@@ -65,7 +65,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
           <>
             <Verdict text={result.text} usage={result.usage} snapshot={result.snapshot} />
             <div className="mt-6">
-              <EmailButton
+              <PushButton
                 rideId={ride.id}
                 rideLabel={ride.label}
                 verdictText={result.text}

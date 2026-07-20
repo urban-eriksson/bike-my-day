@@ -1,11 +1,12 @@
-import { createEmailChannel } from "./email";
+import { createWebPushChannel, PushSubscriptionGoneError } from "./webpush";
 import type { Channel, ChannelDestination, DispatchResult, VerdictNotification } from "./types";
 
 export type { Channel, ChannelDestination, DispatchResult, VerdictNotification } from "./types";
+export { PushSubscriptionGoneError };
 
 /**
- * Singleton registry. As we add web push / native push, register them here so
- * the dispatcher can route by destination.kind without the call site needing
+ * Singleton registry. As we add native push, register it here so the
+ * dispatcher can route by destination.kind without the call site needing
  * to know which channels exist.
  */
 const REGISTRY: Partial<Record<ChannelDestination["kind"], Channel>> = {};
@@ -16,7 +17,7 @@ export function registerChannel(channel: Channel): void {
 
 /** Lazy-init the default channels on first use. */
 function ensureDefaults(): void {
-  if (!REGISTRY.email) REGISTRY.email = createEmailChannel();
+  if (!REGISTRY.webpush) REGISTRY.webpush = createWebPushChannel();
 }
 
 export async function dispatch(

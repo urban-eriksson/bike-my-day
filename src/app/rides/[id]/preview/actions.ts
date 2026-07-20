@@ -1,28 +1,30 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { dispatch, type ChannelDestination } from "@/lib/notify";
+import { dispatch, PushSubscriptionGoneError, type ChannelDestination } from "@/lib/notify";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export type EmailVerdictState = {
+export type PushVerdictState = {
   status: "idle" | "sent" | "error";
   message?: string;
 };
 
 /**
- * Dispatches an already-generated verdict to the user's email channel.
+ * Dispatches an already-generated verdict to every device the user has
+ * subscribed for push — the same path the nightly cron takes, so this doubles
+ * as an end-to-end push test.
  *
  * The verdict text + snapshot details come from hidden form fields, not from
  * a fresh runVerdict() call. That's deliberate: re-running the LLM in this
  * action would (a) charge the user for two Claude calls per click, and (b)
- * produce a different verdict (LLM is non-deterministic), so the email body
+ * produce a different verdict (LLM is non-deterministic), so the pushed body
  * would diverge from what the user just read on screen. Trust here is fine —
- * the only thing the user can spoof is the text emailed to themselves.
+ * the only thing the user can spoof is the text pushed to themselves.
  */
-export async function emailVerdict(
-  _prev: EmailVerdictState,
+export async function pushVerdict(
+  _prev: PushVerdictState,
   formData: FormData,
-): Promise<EmailVerdictState> {
+): Promise<PushVerdictState> {
   const rideId = String(formData.get("ride_id") ?? "").trim();
   const rideLabel = String(formData.get("ride_label") ?? "").trim();
   const verdictText = String(formData.get("verdict_text") ?? "").trim();
@@ -50,7 +52,6 @@ export async function emailVerdict(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  if (!user.email) return { status: "error", message: "Your account has no email address." };
 
   // Confirm the ride belongs to this user; RLS would already block, but the
   // explicit check gives a clean error message if the ride was just deleted.
@@ -62,39 +63,59 @@ export async function emailVerdict(
     .maybeSingle();
   if (!rideRow) return { status: "error", message: "Ride not found." };
 
-  // Find or auto-create the user's email channel.
-  const { data: existingChannel } = await supabase
+  const { data: channels } = await supabase
     .from("notification_channels")
-    .select("id")
+    .select("id, destination")
     .eq("user_id", user.id)
-    .eq("kind", "email")
-    .maybeSingle();
-  if (!existingChannel) {
-    const { error: insertError } = await supabase.from("notification_channels").insert({
-      user_id: user.id,
-      kind: "email",
-      destination: { email: user.email },
-      verified: true,
-    });
-    if (insertError) {
-      return {
-        status: "error",
-        message: `Could not register email channel: ${insertError.message}`,
-      };
+    .eq("kind", "webpush");
+  const devices = (channels ?? []).flatMap((c) => {
+    const dest = c.destination as {
+      endpoint?: unknown;
+      keys?: { p256dh?: unknown; auth?: unknown };
+    };
+    if (
+      typeof dest?.endpoint !== "string" ||
+      typeof dest.keys?.p256dh !== "string" ||
+      typeof dest.keys?.auth !== "string"
+    ) {
+      return [];
+    }
+    const destination: ChannelDestination = {
+      kind: "webpush",
+      endpoint: dest.endpoint,
+      keys: { p256dh: dest.keys.p256dh, auth: dest.keys.auth },
+    };
+    return [{ id: c.id, destination }];
+  });
+  if (devices.length === 0) {
+    return {
+      status: "error",
+      message: "No subscribed devices — enable push notifications in Settings first.",
+    };
+  }
+
+  let sent = 0;
+  let firstError: string | undefined;
+  for (const device of devices) {
+    try {
+      await dispatch({ rideLabel, whenLocal, verdictText, details }, device.destination);
+      sent += 1;
+    } catch (err) {
+      if (err instanceof PushSubscriptionGoneError) {
+        await supabase.from("notification_channels").delete().eq("id", device.id);
+      } else {
+        firstError ??= err instanceof Error ? err.message : String(err);
+      }
     }
   }
 
-  const destination: ChannelDestination = { kind: "email", email: user.email };
-  try {
-    const result = await dispatch({ rideLabel, whenLocal, verdictText, details }, destination);
-    return {
-      status: "sent",
-      message: `Sent to ${user.email}${result.external_id ? ` (id ${result.external_id})` : ""}.`,
-    };
-  } catch (err) {
+  if (sent === 0) {
     return {
       status: "error",
-      message: `Email send failed: ${err instanceof Error ? err.message : String(err)}`,
+      message: firstError
+        ? `Push failed: ${firstError}`
+        : "All subscriptions had expired — enable push notifications again in Settings.",
     };
   }
+  return { status: "sent", message: `Pushed to ${sent} device(s).` };
 }
