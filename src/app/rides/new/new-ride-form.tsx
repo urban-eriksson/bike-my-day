@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { createRide, type CreateRideState } from "../actions";
+import { AddressField } from "./address-field";
 
 const INITIAL: CreateRideState = { status: "idle" };
 
@@ -48,29 +49,21 @@ export function NewRideForm() {
         />
       </Field>
 
-      <Field label="Start (place name)" htmlFor="start_address">
-        <input
-          id="start_address"
-          name="start_address"
-          type="text"
-          required
-          defaultValue={v.start_address ?? ""}
-          placeholder="Uppsala"
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
-        />
-      </Field>
+      <AddressField
+        id="start_address"
+        name="start_address"
+        label="Starting point"
+        placeholder="Datavägen 9, Järfälla"
+        defaultValue={v.start_address ?? ""}
+      />
 
-      <Field label="End (place name)" htmlFor="end_address">
-        <input
-          id="end_address"
-          name="end_address"
-          type="text"
-          required
-          defaultValue={v.end_address ?? ""}
-          placeholder="Stockholm"
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
-        />
-      </Field>
+      <AddressField
+        id="end_address"
+        name="end_address"
+        label="Destination"
+        placeholder="Storgatan 1, Stockholm"
+        defaultValue={v.end_address ?? ""}
+      />
 
       <Field label="Depart time" htmlFor="depart_local_time">
         <input

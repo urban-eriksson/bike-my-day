@@ -21,6 +21,23 @@ export type CreateRideState = {
 
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
+type ResolvedPoint = { label: string; latitude: number; longitude: number };
+
+async function resolvePoint(
+  formData: FormData,
+  field: "start_address" | "end_address",
+  address: string,
+): Promise<ResolvedPoint | null> {
+  const lat = Number.parseFloat(String(formData.get(`${field}_lat`) ?? ""));
+  const lon = Number.parseFloat(String(formData.get(`${field}_lon`) ?? ""));
+  if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+    return { label: address, latitude: lat, longitude: lon };
+  }
+  const hits = await geocodeAddress(address, { count: 1 });
+  const hit = hits[0];
+  return hit ? { label: hit.label, latitude: hit.latitude, longitude: hit.longitude } : null;
+}
+
 function parseDays(formData: FormData): number[] {
   const raw = formData.getAll("days_of_week").map(String);
   const parsed = raw
@@ -75,23 +92,23 @@ export async function createRide(
     redirect("/login");
   }
 
-  const [startHits, endHits] = await Promise.all([
-    geocodeAddress(start_address),
-    geocodeAddress(end_address, { count: 1 }),
+  // The form pins coordinates when the user picks an autocomplete suggestion;
+  // free-typed addresses fall back to geocoding the raw text here.
+  const [start, end] = await Promise.all([
+    resolvePoint(formData, "start_address", start_address),
+    resolvePoint(formData, "end_address", end_address),
   ]);
-  const start = startHits[0];
-  const end = endHits[0];
   if (!start) {
     return {
       status: "error",
-      message: `Couldn't find a place matching "${start_address}". Try a city or town name.`,
+      message: `Couldn't find a place matching "${start_address}". Try a street address or place name.`,
       values: echo,
     };
   }
   if (!end) {
     return {
       status: "error",
-      message: `Couldn't find a place matching "${end_address}". Try a city or town name.`,
+      message: `Couldn't find a place matching "${end_address}". Try a street address or place name.`,
       values: echo,
     };
   }
