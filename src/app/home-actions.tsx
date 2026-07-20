@@ -1,31 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Platform = "detecting" | "standalone" | "ios" | "android" | "desktop";
+
+const subscribeNever = () => () => {};
+
+function detectPlatform(): Platform {
+  if (window.matchMedia("(display-mode: standalone)").matches) return "standalone";
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) return "ios";
+  if (/Android/.test(navigator.userAgent)) return "android";
+  return "desktop";
+}
 
 /**
  * The app is built to live on a phone's home screen (iOS push requires it),
  * so anyone visiting in a browser gets install steps for their platform
  * instead of being funneled straight into the browser flow. Detection is
- * client-side only — the server render shows a neutral loading row, then
- * swaps after mount.
+ * client-side only: the server snapshot renders a neutral placeholder and
+ * the client snapshot swaps in the real platform at hydration.
  */
 export function HomeActions() {
-  const [platform, setPlatform] = useState<Platform>("detecting");
-
-  useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setPlatform("standalone");
-    } else if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-      setPlatform("ios");
-    } else if (/Android/.test(navigator.userAgent)) {
-      setPlatform("android");
-    } else {
-      setPlatform("desktop");
-    }
-  }, []);
+  const platform = useSyncExternalStore<Platform>(
+    subscribeNever,
+    detectPlatform,
+    () => "detecting",
+  );
 
   if (platform === "detecting") {
     return <div className="mt-8 h-9" aria-hidden />;
