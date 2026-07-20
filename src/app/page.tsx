@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HomeActions } from "./home-actions";
 
 export default function Home() {
   return (
@@ -8,17 +8,7 @@ export default function Home() {
         A nightly heads-up on whether tomorrow&apos;s ride is worth doing — sun, rain, wind
         direction along your route, all turned into one plain sentence.
       </p>
-      <div className="mt-8 flex gap-3">
-        <Link href="/login" className="rounded bg-black px-4 py-2 text-sm font-medium text-white">
-          Sign in
-        </Link>
-        <Link
-          href="/dashboard"
-          className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900"
-        >
-          Dashboard
-        </Link>
-      </div>
+      <HomeActions />
     </main>
   );
 }
