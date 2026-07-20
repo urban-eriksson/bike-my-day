@@ -1,39 +1,66 @@
 "use server";
 
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export type SendMagicLinkState = {
+export type SendCodeState = {
   status: "idle" | "sent" | "error";
   message?: string;
 };
 
-export async function sendMagicLink(
-  _prev: SendMagicLinkState,
+export type VerifyCodeState = {
+  status: "idle" | "error";
+  message?: string;
+};
+
+/**
+ * Emails a 6-digit one-time code (no link: the Supabase email template renders
+ * only {{ .Token }}). Codes work everywhere, including the iOS home-screen
+ * app, whose cookie storage a magic link opened in Safari can never reach.
+ */
+export async function sendLoginCode(
+  _prev: SendCodeState,
   formData: FormData,
-): Promise<SendMagicLinkState> {
+): Promise<SendCodeState> {
   const email = String(formData.get("email") ?? "").trim();
-  const next = String(formData.get("next") ?? "/dashboard");
 
   if (!email || !email.includes("@")) {
     return { status: "error", message: "Enter a valid email address." };
   }
 
   const supabase = await createSupabaseServerClient();
-  const origin = (await headers()).get("origin");
-  const callback = new URL("/auth/callback", origin ?? "http://localhost:3000");
-  callback.searchParams.set("next", next);
-
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: {
-      emailRedirectTo: callback.toString(),
-      shouldCreateUser: true,
-    },
+    options: { shouldCreateUser: true },
   });
 
   if (error) {
     return { status: "error", message: error.message };
   }
-  return { status: "sent", message: `Magic link sent to ${email}. Check your inbox.` };
+  return { status: "sent", message: `Code sent to ${email}. Check your inbox.` };
+}
+
+export async function verifyLoginCode(
+  _prev: VerifyCodeState,
+  formData: FormData,
+): Promise<VerifyCodeState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const token = String(formData.get("token") ?? "").trim();
+  const nextParam = String(formData.get("next") ?? "/dashboard");
+  const next = nextParam.startsWith("/") ? nextParam : "/dashboard";
+
+  if (!email || !email.includes("@")) {
+    return { status: "error", message: "Enter a valid email address." };
+  }
+  if (!/^\d{6}$/.test(token)) {
+    return { status: "error", message: "Enter the 6-digit code from the email." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+  redirect(next);
 }
