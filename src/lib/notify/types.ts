@@ -20,17 +20,15 @@ export type VerdictNotification = {
 
 /**
  * Stored in `notification_channels.destination` (jsonb). Per channel kind:
- *   email   → { email: string }
- *   webpush → { endpoint, keys: { p256dh, auth } }   (added in step 9)
+ *   webpush → { endpoint, keys: { p256dh, auth } }   (one row per device)
  *   native  → { token: string, platform: "ios"|"android" } (added later)
  */
 export type ChannelDestination =
-  | { kind: "email"; email: string }
   | { kind: "webpush"; endpoint: string; keys: { p256dh: string; auth: string } }
   | { kind: "native"; token: string; platform: "ios" | "android" };
 
 export type DispatchResult = {
-  /** Provider-side ID (e.g. Resend message id), for tracing/debug. */
+  /** Provider-side ID, for tracing/debug. Web push services return none. */
   external_id?: string;
 };
 

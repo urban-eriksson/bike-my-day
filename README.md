@@ -2,7 +2,7 @@
 
 Let an agent check if tomorrow is a good bike day.
 
-You define your recurring bike routes (start + end address, depart time, days of week). The night before, the app fetches a weather forecast for the relevant time and place, computes the directional wind component along your route (head/tail/cross), and asks an LLM to turn the raw data into a one-line plain-English verdict. The verdict is delivered by email today; native push later.
+You define your recurring bike routes (start + end address, depart time, days of week). The night before, the app fetches a weather forecast for the relevant time and place, computes the directional wind component along your route (head/tail/cross), and asks an LLM to turn the raw data into a one-line plain-English verdict. The verdict arrives as a web push notification on every device you've subscribed — on iPhone, install the app to your home screen (Safari → Share → Add to Home Screen) and enable notifications in Settings.
 
 ## Stack
 
@@ -10,7 +10,7 @@ You define your recurring bike routes (start + end address, depart time, days of
 - Supabase (Postgres + Auth magic-link + RLS)
 - Open-Meteo for forecast + geocoding (no API key)
 - Anthropic Claude (Haiku 4.5) for the verdict text, with prompt caching
-- Resend for email notifications
+- Web Push (VAPID) for notifications, installable as a PWA
 - Vitest (unit + integration) + Playwright (E2E)
 
 ## Development
