@@ -1,92 +1,110 @@
 import { describe, expect, it, vi } from "vitest";
 import { geocodeAddress } from "@/lib/geo/geocode";
 
-function mockJsonResponse(body: unknown, init: { ok?: boolean; status?: number } = {}) {
+function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return {
-    ok: init.ok ?? true,
-    status: init.status ?? 200,
-    statusText: "OK",
+    ok,
+    status,
+    statusText: ok ? "OK" : "Bad Gateway",
     json: async () => body,
   } as unknown as Response;
 }
 
 describe("geocodeAddress", () => {
-  it("returns [] for queries shorter than 2 chars without calling the API", async () => {
+  it("returns [] for queries shorter than 2 characters without fetching", async () => {
     const fetchImpl = vi.fn();
     const result = await geocodeAddress("a", { fetchImpl: fetchImpl as unknown as typeof fetch });
     expect(result).toEqual([]);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("normalises the API response into GeocodeHit objects with a display label", async () => {
+  it("normalises Photon street-address features with a display label", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
-      mockJsonResponse({
-        results: [
+      jsonResponse({
+        features: [
           {
-            id: 1,
-            name: "Stockholm",
-            latitude: 59.3293,
-            longitude: 18.0686,
-            country: "Sweden",
-            admin1: "Stockholm",
-            timezone: "Europe/Stockholm",
+            geometry: { coordinates: [17.8419, 59.4231] },
+            properties: {
+              street: "Datavägen",
+              housenumber: "9",
+              city: "Järfälla",
+              state: "Stockholm County",
+              country: "Sweden",
+            },
           },
         ],
       }),
     );
+
+    const result = await geocodeAddress("Datavägen 9", {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result).toEqual([
+      {
+        name: "Datavägen 9",
+        latitude: 59.4231,
+        longitude: 17.8419,
+        country: "Sweden",
+        label: "Datavägen 9, Järfälla, Sweden",
+      },
+    ]);
+    const url = fetchImpl.mock.calls[0][0] as URL;
+    expect(url.origin + url.pathname).toBe("https://photon.komoot.io/api");
+    expect(url.searchParams.get("q")).toBe("Datavägen 9");
+  });
+
+  it("uses the feature name for places and dedupes repeated label parts", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({
+        features: [
+          {
+            geometry: { coordinates: [18.0686, 59.3293] },
+            properties: { name: "Stockholm", city: "Stockholm", country: "Sweden" },
+          },
+        ],
+      }),
+    );
+
     const result = await geocodeAddress("Stockholm", {
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
-    expect(result).toEqual([
-      {
-        name: "Stockholm",
-        latitude: 59.3293,
-        longitude: 18.0686,
-        country: "Sweden",
-        admin1: "Stockholm",
-        timezone: "Europe/Stockholm",
-        label: "Stockholm, Stockholm, Sweden",
-      },
-    ]);
-    const calledUrl = new URL(fetchImpl.mock.calls[0][0]);
-    expect(calledUrl.origin + calledUrl.pathname).toBe(
-      "https://geocoding-api.open-meteo.com/v1/search",
-    );
-    expect(calledUrl.searchParams.get("name")).toBe("Stockholm");
-    expect(calledUrl.searchParams.get("count")).toBe("5");
+    expect(result[0].label).toBe("Stockholm, Sweden");
   });
 
-  it("returns [] when the API response has no results", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(mockJsonResponse({ generationtime_ms: 0.42 }));
+  it("skips features without coordinates or any usable name", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({
+        features: [
+          { geometry: { coordinates: [18.0, 59.0] }, properties: {} },
+          { geometry: {}, properties: { name: "Uppsala" } },
+          {
+            geometry: { coordinates: [17.64, 59.86] },
+            properties: { name: "Uppsala", country: "Sweden" },
+          },
+        ],
+      }),
+    );
+
+    const result = await geocodeAddress("Uppsala", {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("Uppsala");
+  });
+
+  it("returns [] when the response has no features", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}));
     const result = await geocodeAddress("zzzzzz", {
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
     expect(result).toEqual([]);
   });
 
-  it("throws on non-OK responses", async () => {
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValue({ ok: false, status: 500, statusText: "Server Error" } as Response);
+  it("throws on a non-OK response", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}, false, 502));
     await expect(
       geocodeAddress("Stockholm", { fetchImpl: fetchImpl as unknown as typeof fetch }),
-    ).rejects.toThrow(/Geocoding failed: 500/);
-  });
-
-  it("skips malformed result entries", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      mockJsonResponse({
-        results: [
-          { name: "Good", latitude: 1, longitude: 2 },
-          { name: "Bad", latitude: "nope" },
-          { latitude: 3, longitude: 4 },
-        ],
-      }),
-    );
-    const result = await geocodeAddress("test", {
-      fetchImpl: fetchImpl as unknown as typeof fetch,
-    });
-    expect(result).toHaveLength(1);
-    expect(result[0].name).toBe("Good");
+    ).rejects.toThrow("Geocoding failed: 502");
   });
 });

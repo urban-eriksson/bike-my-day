@@ -1,63 +1,69 @@
 /**
- * Open-Meteo geocoding wrapper.
+ * Photon (photon.komoot.io) geocoding wrapper — OpenStreetMap data behind a
+ * free, keyless API designed for search-as-you-type. Unlike the previous
+ * Open-Meteo geocoder it resolves street addresses ("Datavägen 9, Järfälla"),
+ * not just place names. No `lang` param: Photon only supports a few UI
+ * languages (not Swedish) and defaults to local names, which is what we want.
  *
- * NOTE: Open-Meteo's geocoder resolves *place names* (cities, towns,
- * neighborhoods, landmarks) — not full street addresses. "Stockholm" or
- * "Uppsala Centralstation" works; "Storgatan 12, Uppsala" generally won't.
- * For commute-scale weather this is fine: forecasts vary over kilometers,
- * not meters. If we ever need door-to-door precision, swap this module for
- * a Nominatim/Mapbox-based implementation behind the same `geocodeAddress`
- * signature.
+ * Called from both the browser (autocomplete suggestions; Photon allows CORS)
+ * and the server (fallback geocoding on ride creation).
  */
 
-const SEARCH_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const SEARCH_URL = "https://photon.komoot.io/api";
 
 export type GeocodeHit = {
   name: string;
   latitude: number;
   longitude: number;
   country?: string;
-  admin1?: string;
-  timezone?: string;
-  /** Human-readable display string built from name + admin1 + country. */
+  /** Human-readable display string built from name/street + locality + country. */
   label: string;
 };
 
-type RawHit = {
-  name?: unknown;
-  latitude?: unknown;
-  longitude?: unknown;
-  country?: unknown;
-  admin1?: unknown;
-  timezone?: unknown;
+type PhotonFeature = {
+  geometry?: { coordinates?: unknown };
+  properties?: {
+    name?: unknown;
+    street?: unknown;
+    housenumber?: unknown;
+    city?: unknown;
+    district?: unknown;
+    state?: unknown;
+    country?: unknown;
+  };
 };
 
-function normalize(raw: RawHit): GeocodeHit | null {
-  if (
-    typeof raw.name !== "string" ||
-    typeof raw.latitude !== "number" ||
-    typeof raw.longitude !== "number"
-  ) {
+function str(v: unknown): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+function normalize(feature: PhotonFeature): GeocodeHit | null {
+  const coords = feature.geometry?.coordinates;
+  if (!Array.isArray(coords) || typeof coords[0] !== "number" || typeof coords[1] !== "number") {
     return null;
   }
-  const name = raw.name;
-  const admin1 = typeof raw.admin1 === "string" ? raw.admin1 : undefined;
-  const country = typeof raw.country === "string" ? raw.country : undefined;
-  const labelParts = [name, admin1, country].filter(Boolean);
+  const p = feature.properties ?? {};
+  const street = str(p.street);
+  const housenumber = str(p.housenumber);
+  const primary = str(p.name) ?? (street ? [street, housenumber].filter(Boolean).join(" ") : null);
+  if (!primary) return null;
+
+  const locality = str(p.city) ?? str(p.district) ?? str(p.state);
+  const country = str(p.country);
+  const labelParts = [primary, locality, country].filter(
+    (part, i, arr) => part !== undefined && arr.indexOf(part) === i,
+  );
   return {
-    name,
-    latitude: raw.latitude,
-    longitude: raw.longitude,
+    name: primary,
+    latitude: coords[1],
+    longitude: coords[0],
     country,
-    admin1,
-    timezone: typeof raw.timezone === "string" ? raw.timezone : undefined,
     label: labelParts.join(", "),
   };
 }
 
 export type GeocodeOptions = {
   count?: number;
-  language?: string;
   /** Inject a custom fetch for tests. */
   fetchImpl?: typeof fetch;
 };
@@ -70,17 +76,15 @@ export async function geocodeAddress(
   if (trimmed.length < 2) return [];
 
   const url = new URL(SEARCH_URL);
-  url.searchParams.set("name", trimmed);
-  url.searchParams.set("count", String(options.count ?? 5));
-  url.searchParams.set("language", options.language ?? "en");
-  url.searchParams.set("format", "json");
+  url.searchParams.set("q", trimmed);
+  url.searchParams.set("limit", String(options.count ?? 5));
 
   const fetchImpl = options.fetchImpl ?? fetch;
   const res = await fetchImpl(url, { headers: { accept: "application/json" } });
   if (!res.ok) {
     throw new Error(`Geocoding failed: ${res.status} ${res.statusText}`);
   }
-  const body = (await res.json()) as { results?: RawHit[] };
-  if (!body?.results) return [];
-  return body.results.map(normalize).filter((hit): hit is GeocodeHit => hit !== null);
+  const body = (await res.json()) as { features?: PhotonFeature[] };
+  if (!body?.features) return [];
+  return body.features.map(normalize).filter((hit): hit is GeocodeHit => hit !== null);
 }

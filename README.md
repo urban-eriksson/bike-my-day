@@ -8,7 +8,7 @@ You define your recurring bike routes (start + end address, depart time, days of
 
 - Next.js (App Router) + TypeScript on Vercel
 - Supabase (Postgres + Auth email OTP code + RLS)
-- Open-Meteo for forecast + geocoding (no API key)
+- Open-Meteo for forecasts, Photon (OSM) for address autocomplete + geocoding (no API keys)
 - Anthropic Claude (Haiku 4.5) for the verdict text, with prompt caching
 - Web Push (VAPID) for notifications, installable as a PWA
 - Vitest (unit + integration) + Playwright (E2E)
