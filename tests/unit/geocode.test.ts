@@ -93,6 +93,19 @@ describe("geocodeAddress", () => {
     expect(result[0].name).toBe("Uppsala");
   });
 
+  it("passes bias and bbox params through to Photon", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ features: [] }));
+    await geocodeAddress("Datavägen", {
+      bias: { lat: 59.33, lon: 18.07 },
+      bbox: [10.0, 55.0, 24.5, 69.5],
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const url = fetchImpl.mock.calls[0][0] as URL;
+    expect(url.searchParams.get("lat")).toBe("59.33");
+    expect(url.searchParams.get("lon")).toBe("18.07");
+    expect(url.searchParams.get("bbox")).toBe("10,55,24.5,69.5");
+  });
+
   it("returns [] when the response has no features", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}));
     const result = await geocodeAddress("zzzzzz", {
