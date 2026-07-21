@@ -64,6 +64,10 @@ function normalize(feature: PhotonFeature): GeocodeHit | null {
 
 export type GeocodeOptions = {
   count?: number;
+  /** Rank results near this point first (Photon lat/lon prioritization). */
+  bias?: { lat: number; lon: number };
+  /** Hard-filter results to this box: [minLon, minLat, maxLon, maxLat]. */
+  bbox?: readonly [number, number, number, number];
   /** Inject a custom fetch for tests. */
   fetchImpl?: typeof fetch;
 };
@@ -78,6 +82,13 @@ export async function geocodeAddress(
   const url = new URL(SEARCH_URL);
   url.searchParams.set("q", trimmed);
   url.searchParams.set("limit", String(options.count ?? 5));
+  if (options.bias) {
+    url.searchParams.set("lat", String(options.bias.lat));
+    url.searchParams.set("lon", String(options.bias.lon));
+  }
+  if (options.bbox) {
+    url.searchParams.set("bbox", options.bbox.join(","));
+  }
 
   const fetchImpl = options.fetchImpl ?? fetch;
   const res = await fetchImpl(url, { headers: { accept: "application/json" } });

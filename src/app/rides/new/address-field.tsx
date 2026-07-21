@@ -7,6 +7,25 @@ const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 3;
 
 /**
+ * Suggestion requests go browser→Photon directly, so there's no server-side
+ * IP to geolocate — the browser timezone is the best available signal for
+ * "this user is in Sweden". Swedish users get results filtered to a Sweden
+ * bounding box and ranked from Stockholm; everyone else stays unbiased.
+ */
+const SWEDEN = {
+  bbox: [10.0, 55.0, 24.5, 69.5],
+  bias: { lat: 59.33, lon: 18.07 },
+} as const;
+
+function regionOptions() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone === "Europe/Stockholm" ? SWEDEN : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Address input with Photon-backed suggestions. Picking a suggestion pins its
  * coordinates into hidden `<name>_lat`/`<name>_lon` inputs; editing the text
  * afterwards clears them, and the server action falls back to geocoding the
@@ -39,6 +58,7 @@ export function AddressField({
     const timer = setTimeout(async () => {
       try {
         const hits = await geocodeAddress(value, {
+          ...regionOptions(),
           fetchImpl: (input, init) => fetch(input, { ...init, signal: controller.signal }),
         });
         if (!controller.signal.aborted) {
