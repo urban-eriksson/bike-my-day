@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { bearing, type LatLon } from "@/lib/geo/bearing";
+import { compass } from "@/lib/geo/compass";
 import { windComponents } from "@/lib/geo/wind";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 
@@ -21,28 +22,6 @@ export type VerdictInput = {
 export type VerdictPrompt = {
   system: string;
   user: string;
-};
-
-const compass = (deg: number): string => {
-  const dirs = [
-    "N",
-    "NNE",
-    "NE",
-    "ENE",
-    "E",
-    "ESE",
-    "SE",
-    "SSE",
-    "S",
-    "SSW",
-    "SW",
-    "WSW",
-    "W",
-    "WNW",
-    "NW",
-    "NNW",
-  ];
-  return dirs[Math.round(deg / 22.5) % 16];
 };
 
 const round = (n: number, digits = 1): number => {

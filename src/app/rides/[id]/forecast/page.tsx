@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { compass } from "@/lib/geo/compass";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
@@ -94,7 +95,7 @@ function SnapshotDetails({ snapshot }: { snapshot: WeatherSnapshot | null }) {
       />
       <Row
         k="Wind"
-        v={`${snapshot.wind_speed_ms} m/s from ${snapshot.wind_direction_from_deg}°, gusts ${snapshot.wind_gusts_ms} m/s`}
+        v={`${snapshot.wind_speed_ms} m/s from ${compass(snapshot.wind_direction_from_deg)}, gusts ${snapshot.wind_gusts_ms} m/s`}
       />
       <Row k="Cloud cover" v={`${snapshot.cloud_cover_pct}%`} />
       <Row k="Sun" v={`${snapshot.sunrise_local.slice(11)} – ${snapshot.sunset_local.slice(11)}`} />
