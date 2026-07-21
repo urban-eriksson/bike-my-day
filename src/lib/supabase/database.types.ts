@@ -158,6 +158,7 @@ export type Database = {
           end_lon: number
           id: string
           label: string
+          muted: boolean
           return_local_time: string | null
           start_address: string
           start_lat: number
@@ -176,6 +177,7 @@ export type Database = {
           end_lon: number
           id?: string
           label: string
+          muted?: boolean
           return_local_time?: string | null
           start_address: string
           start_lat: number
@@ -194,6 +196,7 @@ export type Database = {
           end_lon?: number
           id?: string
           label?: string
+          muted?: boolean
           return_local_time?: string | null
           start_address?: string
           start_lat?: number

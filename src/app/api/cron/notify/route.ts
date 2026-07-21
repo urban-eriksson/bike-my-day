@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   const { data: rides, error: ridesError } = await supabase
     .from("rides")
     .select(
-      "id, user_id, label, start_lat, start_lon, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, timezone",
+      "id, user_id, label, start_lat, start_lon, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, timezone, muted",
     )
     .eq("active", true);
   if (ridesError) {
@@ -104,6 +104,16 @@ export async function GET(request: NextRequest) {
 
   for (const { ride: cronRide, scheduledFor } of due) {
     const fullRide = (cronRide as RideForCron & { fullRide: (typeof rides)[number] }).fullRide;
+    if (fullRide.muted) {
+      results.push({
+        ride_id: cronRide.id,
+        user_id: cronRide.user_id,
+        scheduled_for: scheduledFor.toISOString(),
+        status: "skipped",
+        detail: "muted",
+      });
+      continue;
+    }
     const devices = channelsByUser.get(cronRide.user_id) ?? [];
     if (devices.length === 0) {
       results.push({

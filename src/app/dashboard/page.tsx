@@ -1,26 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { deleteRide } from "@/app/rides/actions";
-import { distanceKm } from "@/lib/geo/distance";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
+import { RideCard, type RideCardData } from "./ride-card";
 
 export const metadata = { title: "Dashboard — bike my day" };
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/**
- * Address labels end with the country ("Datavägen 9, Järfälla, Sweden") —
- * constant noise on the cards. Drop the last comma segment when it looks
- * like a country (no digits, multi-segment label).
- */
-function shortAddress(label: string): string {
-  const parts = label.split(",").map((p) => p.trim());
-  if (parts.length >= 2 && !/\d/.test(parts[parts.length - 1])) {
-    return parts.slice(0, -1).join(", ");
-  }
-  return label;
-}
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -32,7 +16,7 @@ export default async function DashboardPage() {
   const { data: rides, error } = await supabase
     .from("rides")
     .select(
-      "id, label, start_address, start_lat, start_lon, end_address, end_lat, end_lon, depart_local_time, days_of_week, active",
+      "id, label, start_address, start_lat, start_lon, end_address, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, muted, active",
     )
     .order("created_at", { ascending: false });
 
@@ -82,43 +66,25 @@ export default async function DashboardPage() {
         ) : (
           <ul className="mt-4 flex flex-col gap-3">
             {rides.map((r) => (
-              <li key={r.id} className="rounded border border-gray-200 p-4 text-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-medium text-gray-900">{r.label}</div>
-                    <div className="mt-1 text-gray-600">
-                      {shortAddress(r.start_address)} → {shortAddress(r.end_address)}{" "}
-                      <span className="whitespace-nowrap text-gray-400">
-                        (
-                        {distanceKm(
-                          { lat: Number(r.start_lat), lon: Number(r.start_lon) },
-                          { lat: Number(r.end_lat), lon: Number(r.end_lon) },
-                        ).toFixed(1)}{" "}
-                        km)
-                      </span>
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500">
-                      {(r.depart_local_time ?? "").slice(0, 5)} ·{" "}
-                      {(r.days_of_week ?? []).map((d: number) => DAY_NAMES[d]).join(" ")}
-                      {r.active ? "" : " · paused"}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Link
-                      href={`/rides/${r.id}/preview`}
-                      className="text-xs font-medium text-gray-900 hover:underline"
-                    >
-                      Preview forecast
-                    </Link>
-                    <form action={deleteRide}>
-                      <input type="hidden" name="id" value={r.id} />
-                      <button type="submit" className="text-xs text-red-600 hover:underline">
-                        Delete
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </li>
+              <RideCard
+                key={r.id}
+                ride={
+                  {
+                    id: r.id,
+                    label: r.label,
+                    start_address: r.start_address,
+                    start_lat: Number(r.start_lat),
+                    start_lon: Number(r.start_lon),
+                    end_address: r.end_address,
+                    end_lat: Number(r.end_lat),
+                    end_lon: Number(r.end_lon),
+                    depart_local_time: String(r.depart_local_time),
+                    return_local_time: r.return_local_time ? String(r.return_local_time) : null,
+                    days_of_week: r.days_of_week as number[],
+                    muted: r.muted,
+                  } satisfies RideCardData
+                }
+              />
             ))}
           </ul>
         )}
