@@ -150,6 +150,114 @@ export async function createRide(
   redirect("/dashboard");
 }
 
+export type UpdateRideState = {
+  status: "idle" | "saved" | "error";
+  message?: string;
+};
+
+/**
+ * Edits an existing ride. Coordinates are kept when the address text is
+ * unchanged; an edited address uses the autocomplete-pinned coords or falls
+ * back to geocoding, same as createRide.
+ */
+export async function updateRide(
+  _prev: UpdateRideState,
+  formData: FormData,
+): Promise<UpdateRideState> {
+  const id = String(formData.get("id") ?? "").trim();
+  const label = String(formData.get("label") ?? "").trim();
+  const start_address = String(formData.get("start_address") ?? "").trim();
+  const end_address = String(formData.get("end_address") ?? "").trim();
+  const depart_local_time = String(formData.get("depart_local_time") ?? "").trim();
+  const round_trip = formData.get("round_trip") != null;
+  const return_local_time = round_trip
+    ? String(formData.get("return_local_time") ?? "").trim()
+    : "";
+  const muted = formData.get("muted") != null;
+  const days_of_week = parseDays(formData);
+
+  if (!id) return { status: "error", message: "Missing ride id." };
+  if (!label) return { status: "error", message: "Label is required." };
+  if (!start_address || !end_address) {
+    return { status: "error", message: "Start and end addresses are required." };
+  }
+  if (!/^\d{2}:\d{2}$/.test(depart_local_time)) {
+    return { status: "error", message: "Depart time must be HH:MM." };
+  }
+  if (round_trip) {
+    if (!/^\d{2}:\d{2}$/.test(return_local_time)) {
+      return { status: "error", message: "Return time must be HH:MM." };
+    }
+    if (return_local_time <= depart_local_time) {
+      return { status: "error", message: "Return time must be after depart time." };
+    }
+  }
+  if (days_of_week.length === 0) {
+    return { status: "error", message: "Pick at least one day of the week." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: existing } = await supabase
+    .from("rides")
+    .select("id, start_address, start_lat, start_lon, end_address, end_lat, end_lon")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!existing) return { status: "error", message: "Ride not found." };
+
+  const keepStart = start_address === existing.start_address;
+  const keepEnd = end_address === existing.end_address;
+  const [start, end] = await Promise.all([
+    keepStart
+      ? Promise.resolve({
+          label: existing.start_address,
+          latitude: Number(existing.start_lat),
+          longitude: Number(existing.start_lon),
+        })
+      : resolvePoint(formData, "start_address", start_address),
+    keepEnd
+      ? Promise.resolve({
+          label: existing.end_address,
+          latitude: Number(existing.end_lat),
+          longitude: Number(existing.end_lon),
+        })
+      : resolvePoint(formData, "end_address", end_address),
+  ]);
+  if (!start) {
+    return { status: "error", message: `Couldn't find a place matching "${start_address}".` };
+  }
+  if (!end) {
+    return { status: "error", message: `Couldn't find a place matching "${end_address}".` };
+  }
+
+  const { error } = await supabase
+    .from("rides")
+    .update({
+      label,
+      start_address: start.label,
+      start_lat: start.latitude,
+      start_lon: start.longitude,
+      end_address: end.label,
+      end_lat: end.latitude,
+      end_lon: end.longitude,
+      depart_local_time: `${depart_local_time}:00`,
+      return_local_time: round_trip ? `${return_local_time}:00` : null,
+      days_of_week,
+      muted,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { status: "error", message: error.message };
+
+  revalidatePath("/dashboard");
+  return { status: "saved", message: "Saved." };
+}
+
 export async function deleteRide(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return;
