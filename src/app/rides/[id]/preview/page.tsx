@@ -19,7 +19,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
   const { data: ride, error: rideError } = await supabase
     .from("rides")
     .select(
-      "id, label, start_address, start_lat, start_lon, end_address, end_lat, end_lon, depart_local_time, days_of_week, timezone",
+      "id, label, start_address, start_lat, start_lon, end_address, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, timezone",
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -49,6 +49,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
     end_lat: Number(ride.end_lat),
     end_lon: Number(ride.end_lon),
     depart_local_time: String(ride.depart_local_time),
+    return_local_time: ride.return_local_time ? String(ride.return_local_time) : null,
     days_of_week: ride.days_of_week as number[],
     timezone: ride.timezone,
   };

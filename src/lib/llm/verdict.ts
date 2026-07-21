@@ -17,6 +17,8 @@ export type VerdictInput = {
   /** Free-text user preferences ("hate riding under 5°C, fine in light rain"). */
   preferences: string;
   snapshot: WeatherSnapshot;
+  /** Round trip: forecast at the destination for the return departure hour. */
+  returnSnapshot?: WeatherSnapshot | null;
 };
 
 export type VerdictPrompt = {
@@ -38,7 +40,7 @@ Your output has EXACTLY this shape — a score line, then the text:
 SCORE: <integer 0-5>
 <one or at most two short sentences>
 
-The score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. The text is plain English — no Markdown, no emoji, no preamble — and:
+The score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. When a return leg is given, cover BOTH legs in the text (out first, then return) and make the score reflect the WORSE leg — the rider commits to the whole day. The text is plain English — no Markdown, no emoji, no preamble — and:
 
 - Tells the rider whether tomorrow's ride looks good, marginal, or bad, consistent with the score.
 - Names the one or two factors that drove that judgment, in concrete numbers (°C, mm, m/s, compass direction).
@@ -47,17 +49,12 @@ The score rates how good the ride will be, honoring the user's preferences: 5 = 
 
 Do not hedge with "you might want to consider". Be direct. The rider will read this in 2 seconds and decide.`;
 
-export function buildVerdictPrompt(input: VerdictInput): VerdictPrompt {
-  const legBearing = bearing(input.start, input.end);
-  const wind = windComponents(
-    legBearing,
-    input.snapshot.wind_direction_from_deg,
-    input.snapshot.wind_speed_ms,
-  );
+function legLines(snapshot: WeatherSnapshot, legBearing: number): string[] {
+  const wind = windComponents(legBearing, snapshot.wind_direction_from_deg, snapshot.wind_speed_ms);
   const gustComponent = windComponents(
     legBearing,
-    input.snapshot.wind_direction_from_deg,
-    input.snapshot.wind_gusts_ms,
+    snapshot.wind_direction_from_deg,
+    snapshot.wind_gusts_ms,
   );
 
   const headTail =
@@ -71,26 +68,47 @@ export function buildVerdictPrompt(input: VerdictInput): VerdictPrompt {
       ? `gusting to ${round(gustComponent.headwind)} m/s headwind`
       : `gusting to ${round(-gustComponent.headwind)} m/s tailwind`;
 
-  const lines = [
-    `Ride: ${input.rideLabel}`,
-    `Hour: ${input.snapshot.as_of_local} (${input.snapshot.timezone})`,
+  return [
+    `Hour: ${snapshot.as_of_local} (${snapshot.timezone})`,
     `Leg bearing: ${Math.round(legBearing)}° (${compass(legBearing)})`,
-    "",
-    `Temperature: ${round(input.snapshot.temperature_c)} °C (feels like ${round(input.snapshot.apparent_temperature_c)} °C)`,
-    `Precipitation: ${round(input.snapshot.precipitation_mm, 2)} mm${
-      input.snapshot.precipitation_probability_pct === null
+    `Temperature: ${round(snapshot.temperature_c)} °C (feels like ${round(snapshot.apparent_temperature_c)} °C)`,
+    `Precipitation: ${round(snapshot.precipitation_mm, 2)} mm${
+      snapshot.precipitation_probability_pct === null
         ? ""
-        : ` (${input.snapshot.precipitation_probability_pct}% chance)`
+        : ` (${snapshot.precipitation_probability_pct}% chance)`
     }`,
-    `Cloud cover: ${input.snapshot.cloud_cover_pct}%`,
-    `Wind: ${round(input.snapshot.wind_speed_ms)} m/s from ${input.snapshot.wind_direction_from_deg}° (${compass(input.snapshot.wind_direction_from_deg)}), ${headTail}, ${cross}`,
-    `Gusts: ${round(input.snapshot.wind_gusts_ms)} m/s, ${gustHead}`,
-    `Daylight at depart: ${input.snapshot.is_day ? "yes" : "no"} (sunrise ${input.snapshot.sunrise_local}, sunset ${input.snapshot.sunset_local})`,
-    `WMO weather code: ${input.snapshot.weather_code}`,
+    `Cloud cover: ${snapshot.cloud_cover_pct}%`,
+    `Wind: ${round(snapshot.wind_speed_ms)} m/s from ${snapshot.wind_direction_from_deg}° (${compass(snapshot.wind_direction_from_deg)}), ${headTail}, ${cross}`,
+    `Gusts: ${round(snapshot.wind_gusts_ms)} m/s, ${gustHead}`,
+    `Daylight at depart: ${snapshot.is_day ? "yes" : "no"} (sunrise ${snapshot.sunrise_local}, sunset ${snapshot.sunset_local})`,
+    `WMO weather code: ${snapshot.weather_code}`,
+  ];
+}
+
+export function buildVerdictPrompt(input: VerdictInput): VerdictPrompt {
+  const outBearing = bearing(input.start, input.end);
+
+  const lines = [`Ride: ${input.rideLabel}`];
+  if (input.returnSnapshot) {
+    lines.push("", "=== Outbound leg ===");
+  } else {
+    lines.push("");
+  }
+  lines.push(...legLines(input.snapshot, outBearing));
+  if (input.returnSnapshot) {
+    // Return leg: destination → start, so the bearing flips and the same
+    // wind becomes its mirror (tailwind out = headwind home).
+    lines.push(
+      "",
+      "=== Return leg ===",
+      ...legLines(input.returnSnapshot, bearing(input.end, input.start)),
+    );
+  }
+  lines.push(
     "",
     "User preferences (free text — let these override generic norms):",
     input.preferences.trim() === "" ? "(none — apply sensible defaults)" : input.preferences.trim(),
-  ];
+  );
 
   return { system: SYSTEM_PROMPT, user: lines.join("\n") };
 }

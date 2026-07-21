@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   const { data: rides, error: ridesError } = await supabase
     .from("rides")
     .select(
-      "id, user_id, label, start_lat, start_lon, end_lat, end_lon, depart_local_time, days_of_week, timezone",
+      "id, user_id, label, start_lat, start_lon, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, timezone",
     )
     .eq("active", true);
   if (ridesError) {
@@ -142,6 +142,7 @@ export async function GET(request: NextRequest) {
       end_lat: Number(fullRide.end_lat),
       end_lon: Number(fullRide.end_lon),
       depart_local_time: cronRide.depart_local_time,
+      return_local_time: fullRide.return_local_time ? String(fullRide.return_local_time) : null,
       days_of_week: cronRide.days_of_week,
       timezone: cronRide.timezone,
     };

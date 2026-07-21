@@ -20,6 +20,7 @@ const DEFAULT_DAYS = [1, 2, 3, 4, 5];
 export function NewRideForm() {
   const [state, formAction, pending] = useActionState(createRide, INITIAL);
   const [timezone, setTimezone] = useState("");
+  const [roundTrip, setRoundTrip] = useState(false);
 
   useEffect(() => {
     // Reading the browser's IANA timezone is inherently client-only, and we
@@ -75,6 +76,30 @@ export function NewRideForm() {
           className="rounded border border-gray-300 px-3 py-2 text-sm"
         />
       </Field>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          name="round_trip"
+          checked={roundTrip}
+          onChange={(e) => setRoundTrip(e.target.checked)}
+          className="h-4 w-4"
+        />
+        Round trip
+      </label>
+
+      {roundTrip ? (
+        <Field label="Return time" htmlFor="return_local_time">
+          <input
+            id="return_local_time"
+            name="return_local_time"
+            type="time"
+            required
+            defaultValue={v.return_local_time ?? "17:00"}
+            className="rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </Field>
+      ) : null}
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium">Days of week</legend>
