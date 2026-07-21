@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { compass } from "@/lib/geo/compass";
 import { redirect } from "next/navigation";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -140,7 +141,7 @@ function Forecast({
         />
         <Row
           k="Wind"
-          v={`${snapshot.wind_speed_ms} m/s from ${snapshot.wind_direction_from_deg}°, gusts ${snapshot.wind_gusts_ms} m/s`}
+          v={`${snapshot.wind_speed_ms} m/s from ${compass(snapshot.wind_direction_from_deg)}, gusts ${snapshot.wind_gusts_ms} m/s`}
         />
         <Row k="Cloud cover" v={`${snapshot.cloud_cover_pct}%`} />
         <Row
