@@ -79,6 +79,36 @@ describe("buildVerdictPrompt", () => {
     expect(user).toContain("(none — apply sensible defaults)");
   });
 
+  it("adds a return leg with mirrored wind decomposition for round trips", () => {
+    // Same wind for both hours: tailwind on the way out (SSE leg, wind from
+    // NNW) must decompose to a headwind on the reversed return leg.
+    const { user } = buildVerdictPrompt({
+      rideLabel: "Commute",
+      start: { lat: 59.86, lon: 17.64 },
+      end: { lat: 59.33, lon: 18.07 },
+      preferences: "",
+      snapshot: SNAPSHOT,
+      returnSnapshot: { ...SNAPSHOT, as_of_local: "2026-04-27T17:00" },
+    });
+    expect(user).toContain("=== Outbound leg ===");
+    expect(user).toContain("=== Return leg ===");
+    expect(user).toContain("2026-04-27T17:00");
+    const [outbound, returnLeg] = user.split("=== Return leg ===");
+    expect(outbound).toMatch(/tailwind \d/);
+    expect(returnLeg).toMatch(/headwind \d/);
+  });
+
+  it("omits the leg markers for one-way rides", () => {
+    const { user } = buildVerdictPrompt({
+      rideLabel: "Commute",
+      start: { lat: 59.86, lon: 17.64 },
+      end: { lat: 59.33, lon: 18.07 },
+      preferences: "",
+      snapshot: SNAPSHOT,
+    });
+    expect(user).not.toContain("=== Outbound leg ===");
+  });
+
   it("parses the score line and strips it from the text", () => {
     const { text, score } = parseVerdictOutput(
       "SCORE: 4\nGreat morning — light tailwind and 12 °C.",

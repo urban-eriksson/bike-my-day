@@ -12,6 +12,8 @@ export type RideForVerdict = {
   end_lat: number;
   end_lon: number;
   depart_local_time: string;
+  /** "HH:MM[:SS]" — non-null means round trip; forecast covers both legs. */
+  return_local_time?: string | null;
   days_of_week: number[];
   timezone: string;
 };
@@ -57,12 +59,35 @@ export async function runVerdict(
     at,
     timezone: ride.timezone,
   });
+
+  // Round trip: forecast at the destination for the return hour, same local
+  // day. Same-day offset arithmetic (returnAt = departAt + Δminutes) sidesteps
+  // timezone math; a return time at/before depart is ignored as invalid.
+  let returnSnapshot: WeatherSnapshot | null = null;
+  if (ride.return_local_time) {
+    const deltaMin = minutesOfDay(ride.return_local_time) - minutesOfDay(ride.depart_local_time);
+    if (deltaMin > 0) {
+      returnSnapshot = await provider.forecast({
+        lat: ride.end_lat,
+        lon: ride.end_lon,
+        at: new Date(at.getTime() + deltaMin * 60_000),
+        timezone: ride.timezone,
+      });
+    }
+  }
+
   const { text, score, usage } = await generateVerdict({
     rideLabel: ride.label,
     start: { lat: ride.start_lat, lon: ride.start_lon },
     end: { lat: ride.end_lat, lon: ride.end_lon },
     preferences: options.preferences,
     snapshot,
+    returnSnapshot,
   });
   return { text, score, usage, snapshot, scheduledFor: at };
+}
+
+function minutesOfDay(hhmm: string): number {
+  const [h = 0, m = 0] = hhmm.split(":").map((p) => Number.parseInt(p, 10));
+  return h * 60 + m;
 }

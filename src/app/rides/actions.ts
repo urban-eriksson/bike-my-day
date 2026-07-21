@@ -14,6 +14,7 @@ export type CreateRideState = {
     start_address?: string;
     end_address?: string;
     depart_local_time?: string;
+    return_local_time?: string;
     days_of_week?: number[];
     timezone?: string;
   };
@@ -54,6 +55,10 @@ export async function createRide(
   const start_address = String(formData.get("start_address") ?? "").trim();
   const end_address = String(formData.get("end_address") ?? "").trim();
   const depart_local_time = String(formData.get("depart_local_time") ?? "").trim();
+  const round_trip = formData.get("round_trip") != null;
+  const return_local_time = round_trip
+    ? String(formData.get("return_local_time") ?? "").trim()
+    : "";
   const timezone = String(formData.get("timezone") ?? "").trim();
   const days_of_week = parseDays(formData);
 
@@ -62,6 +67,7 @@ export async function createRide(
     start_address,
     end_address,
     depart_local_time,
+    return_local_time: return_local_time || undefined,
     days_of_week,
     timezone,
   };
@@ -72,6 +78,14 @@ export async function createRide(
   }
   if (!/^\d{2}:\d{2}$/.test(depart_local_time)) {
     return { status: "error", message: "Depart time must be HH:MM.", values: echo };
+  }
+  if (round_trip) {
+    if (!/^\d{2}:\d{2}$/.test(return_local_time)) {
+      return { status: "error", message: "Return time must be HH:MM.", values: echo };
+    }
+    if (return_local_time <= depart_local_time) {
+      return { status: "error", message: "Return time must be after depart time.", values: echo };
+    }
   }
   if (days_of_week.length === 0) {
     return { status: "error", message: "Pick at least one day of the week.", values: echo };
@@ -123,6 +137,7 @@ export async function createRide(
     end_lat: end.latitude,
     end_lon: end.longitude,
     depart_local_time: `${depart_local_time}:00`,
+    return_local_time: round_trip ? `${return_local_time}:00` : null,
     days_of_week,
     timezone,
     active: true,
