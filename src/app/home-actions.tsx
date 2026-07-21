@@ -52,7 +52,7 @@ export function HomeActions() {
     <div className="mt-8 max-w-md">
       <h2 className="text-lg font-semibold">Put it on your phone</h2>
       <p className="mt-1 text-sm text-gray-600">
-        bike my day lives on your home screen — that&apos;s how the daily verdict reaches you as a
+        bike my day lives on your home screen — that&apos;s how the daily forecast reaches you as a
         notification.
       </p>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildVerdictPrompt } from "@/lib/llm/verdict";
+import { buildVerdictPrompt, parseVerdictOutput } from "@/lib/llm/verdict";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 
 const SNAPSHOT: WeatherSnapshot = {
@@ -29,7 +29,8 @@ describe("buildVerdictPrompt", () => {
       snapshot: SNAPSHOT,
     });
 
-    expect(system).toContain("verdict generator");
+    expect(system).toContain("forecast generator");
+    expect(system).toContain("SCORE: <integer 0-5>");
     expect(system).toContain("one or at most two short sentences");
 
     expect(user).toContain("Morning commute");
@@ -76,6 +77,25 @@ describe("buildVerdictPrompt", () => {
       snapshot: SNAPSHOT,
     });
     expect(user).toContain("(none — apply sensible defaults)");
+  });
+
+  it("parses the score line and strips it from the text", () => {
+    const { text, score } = parseVerdictOutput(
+      "SCORE: 4\nGreat morning — light tailwind and 12 °C.",
+    );
+    expect(score).toBe(4);
+    expect(text).toBe("Great morning — light tailwind and 12 °C.");
+  });
+
+  it("degrades to score=null when the score line is missing or malformed", () => {
+    expect(parseVerdictOutput("Just a plain sentence.")).toEqual({
+      text: "Just a plain sentence.",
+      score: null,
+    });
+    expect(parseVerdictOutput("SCORE: 9\nToo high.")).toEqual({
+      text: "SCORE: 9\nToo high.",
+      score: null,
+    });
   });
 
   it("omits precipitation probability cleanly when missing", () => {

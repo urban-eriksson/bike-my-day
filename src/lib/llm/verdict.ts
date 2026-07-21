@@ -50,13 +50,18 @@ const round = (n: number, digits = 1): number => {
   return Math.round(n * f) / f;
 };
 
-const SYSTEM_PROMPT = `You are the verdict generator for a bike-commute weather app.
+const SYSTEM_PROMPT = `You are the forecast generator for a bike-commute weather app.
 
 You receive (a) a structured weather snapshot for a specific hour and place, including wind decomposed into headwind / crosswind along the rider's route, and (b) the user's own free-text preferences describing what makes or breaks a ride for them.
 
-Your job is to produce a SINGLE plain-English verdict — one or at most two short sentences, no Markdown, no emoji, no preamble — that:
+Your output has EXACTLY this shape — a score line, then the text:
 
-- Tells the rider whether tomorrow's ride looks good, marginal, or bad.
+SCORE: <integer 0-5>
+<one or at most two short sentences>
+
+The score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. The text is plain English — no Markdown, no emoji, no preamble — and:
+
+- Tells the rider whether tomorrow's ride looks good, marginal, or bad, consistent with the score.
 - Names the one or two factors that drove that judgment, in concrete numbers (°C, mm, m/s, compass direction).
 - Honors the user's preferences over generic norms — if they say "fine in light rain", do not flag light rain as bad; if they say "headwind over 8 m/s is a no", flag any forecast above that.
 - Uses headwind / tailwind language directly (the wind component along their leg is given to you — do not re-derive it from raw direction).
@@ -113,8 +118,24 @@ export function buildVerdictPrompt(input: VerdictInput): VerdictPrompt {
 
 export type VerdictResult = {
   text: string;
+  /** 0–5 ride quality, null if the model's score line couldn't be parsed. */
+  score: number | null;
   usage: { input_tokens: number; output_tokens: number };
 };
+
+/**
+ * Splits the model's "SCORE: n\n<text>" shape. Defensive: a malformed score
+ * line degrades to score=null with the raw text kept, never a hard failure —
+ * a notification without stars beats no notification.
+ */
+export function parseVerdictOutput(raw: string): { text: string; score: number | null } {
+  const match = raw.match(/^\s*SCORE:\s*([0-5])\s*\n/);
+  if (!match) return { text: raw.trim(), score: null };
+  return {
+    text: raw.slice(match[0].length).trim(),
+    score: Number.parseInt(match[1], 10),
+  };
+}
 
 export type GenerateVerdictOptions = {
   /** Inject a custom Anthropic client for tests. */
@@ -137,14 +158,15 @@ export async function generateVerdict(
     messages: [{ role: "user", content: user }],
   });
 
-  const text = response.content
+  const raw = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
-    .join("")
-    .trim();
+    .join("");
+  const { text, score } = parseVerdictOutput(raw);
 
   return {
     text,
+    score,
     usage: {
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,

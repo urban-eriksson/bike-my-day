@@ -9,6 +9,7 @@ export type PushButtonPayload = {
   rideId: string;
   rideLabel: string;
   verdictText: string;
+  score: number | null;
   whenLocal: string;
   details: {
     temperatureC: number;
@@ -27,6 +28,7 @@ export function PushButton(props: PushButtonPayload) {
       <input type="hidden" name="ride_id" value={props.rideId} />
       <input type="hidden" name="ride_label" value={props.rideLabel} />
       <input type="hidden" name="verdict_text" value={props.verdictText} />
+      <input type="hidden" name="score" value={props.score == null ? "" : String(props.score)} />
       <input type="hidden" name="when_local" value={props.whenLocal} />
       <input type="hidden" name="temperature_c" value={String(props.details.temperatureC)} />
       <input
@@ -42,7 +44,7 @@ export function PushButton(props: PushButtonPayload) {
         disabled={pending}
         className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
       >
-        {pending ? "Sending…" : "Send this verdict as a push"}
+        {pending ? "Sending…" : "Send this forecast as a push"}
       </button>
       {state.message ? (
         <span

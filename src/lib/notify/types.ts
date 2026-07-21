@@ -8,6 +8,10 @@ export type VerdictNotification = {
   whenLocal: string;
   /** The one-sentence verdict the LLM produced. */
   verdictText: string;
+  /** 0–5 ride quality — rendered as stars in the notification title. */
+  score?: number | null;
+  /** In-app path the notification should open (defaults to /dashboard). */
+  url?: string;
   /** Optional structured snapshot for richer rendering (HTML email, deep links). */
   details?: {
     temperatureC?: number;

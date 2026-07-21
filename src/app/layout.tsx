@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "bike my day",
-  description: "Daily bike-ride weather verdicts, pushed to your phone.",
+  description: "Daily bike-ride forecasts, pushed to your phone.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -166,6 +166,8 @@ export async function GET(request: NextRequest) {
         rideLabel: fullRide.label,
         whenLocal: run.snapshot.as_of_local,
         verdictText: run.text,
+        score: run.score,
+        url: `/rides/${cronRide.id}/forecast`,
         details: {
           temperatureC: run.snapshot.temperature_c,
           apparentTemperatureC: run.snapshot.apparent_temperature_c,
@@ -220,6 +222,7 @@ export async function GET(request: NextRequest) {
           scheduled_for: scheduledFor.toISOString(),
           forecast_json: run.snapshot as unknown as Json,
           verdict_text: run.text,
+          score: run.score,
           sent_at: new Date().toISOString(),
         },
         { onConflict: "ride_id,scheduled_for" },

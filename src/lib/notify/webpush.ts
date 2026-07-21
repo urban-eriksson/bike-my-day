@@ -93,14 +93,23 @@ function createDefaultClient(vapid?: WebPushChannelOptions["vapid"]): WebPushCli
   return webpush;
 }
 
+/** ⭐ for earned stars, ☆ for the rest — the closest plain text gets to gold/grey. */
+export function renderStars(score: number): string {
+  const clamped = Math.max(0, Math.min(5, Math.round(score)));
+  return "⭐".repeat(clamped) + "☆".repeat(5 - clamped);
+}
+
 export function renderPushPayload(n: VerdictNotification): PushPayload {
   const bodyLines = [n.verdictText];
   const detail = renderDetailLine(n);
   if (detail) bodyLines.push(detail);
+  // Stars headline the ride quality; fall back to the depart time when the
+  // LLM's score line couldn't be parsed.
+  const headline = n.score != null ? renderStars(n.score) : n.whenLocal.slice(11, 16);
   return {
-    title: `${n.rideLabel} — ${n.whenLocal.slice(11, 16)}`,
+    title: `${n.rideLabel} — ${headline}`,
     body: bodyLines.join("\n"),
-    url: "/dashboard",
+    url: n.url ?? "/dashboard",
   };
 }
 
