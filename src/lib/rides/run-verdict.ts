@@ -18,6 +18,8 @@ export type RideForVerdict = {
 
 export type VerdictRun = {
   text: string;
+  /** 0–5 ride quality from the LLM, null if unparseable. */
+  score: number | null;
   usage: { input_tokens: number; output_tokens: number };
   snapshot: WeatherSnapshot;
   /** UTC instant the verdict is for. */
@@ -55,12 +57,12 @@ export async function runVerdict(
     at,
     timezone: ride.timezone,
   });
-  const { text, usage } = await generateVerdict({
+  const { text, score, usage } = await generateVerdict({
     rideLabel: ride.label,
     start: { lat: ride.start_lat, lon: ride.start_lon },
     end: { lat: ride.end_lat, lon: ride.end_lon },
     preferences: options.preferences,
     snapshot,
   });
-  return { text, usage, snapshot, scheduledFor: at };
+  return { text, score, usage, snapshot, scheduledFor: at };
 }

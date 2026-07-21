@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "bike my day",
     short_name: "bike my day",
-    description: "Daily bike-ride weather verdicts, pushed to your phone.",
+    description: "Daily bike-ride forecasts, pushed to your phone.",
     start_url: "/dashboard",
     display: "standalone",
     background_color: "#ffffff",

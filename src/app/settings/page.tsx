@@ -30,7 +30,7 @@ export default async function SettingsPage() {
 
       <h2 className="mt-8 text-lg font-semibold">Ride preferences</h2>
       <p className="mt-1 text-sm text-gray-600">
-        Tell the verdict generator what makes or breaks a ride for you. The text below is passed
+        Tell the forecast generator what makes or breaks a ride for you. The text below is passed
         verbatim to the LLM along with the forecast — be specific. Example:{" "}
         <em>
           &ldquo;I hate riding under 5&nbsp;°C. Fine in light rain but not heavy. Anything over
@@ -41,7 +41,7 @@ export default async function SettingsPage() {
 
       <h2 className="mt-10 text-lg font-semibold">Notifications</h2>
       <p className="mt-1 text-sm text-gray-600">
-        Get each verdict as a push notification on this device. Enable it on every device you want
+        Get each forecast as a push notification on this device. Enable it on every device you want
         notified.
       </p>
       <PushSettings />

@@ -32,6 +32,8 @@ export async function pushVerdict(
   if (!rideId || !verdictText || !whenLocal) {
     return { status: "error", message: "Missing payload — try refreshing the page." };
   }
+  const scoreRaw = String(formData.get("score") ?? "").trim();
+  const score = /^[0-5]$/.test(scoreRaw) ? Number.parseInt(scoreRaw, 10) : null;
 
   const num = (key: string): number | undefined => {
     const v = formData.get(key);
@@ -98,7 +100,10 @@ export async function pushVerdict(
   let firstError: string | undefined;
   for (const device of devices) {
     try {
-      await dispatch({ rideLabel, whenLocal, verdictText, details }, device.destination);
+      await dispatch(
+        { rideLabel, whenLocal, verdictText, score, url: `/rides/${rideId}/forecast`, details },
+        device.destination,
+      );
       sent += 1;
     } catch (err) {
       if (err instanceof PushSubscriptionGoneError) {

@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 import { PushButton } from "./push-button";
 
-export const metadata = { title: "Verdict — bike my day" };
+export const metadata = { title: "Forecast preview — bike my day" };
 
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -57,18 +57,24 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
   return (
     <Frame>
       <p className="text-sm text-gray-600">
-        Verdict for <span className="font-medium text-gray-900">{ride.label}</span>:{" "}
+        Forecast for <span className="font-medium text-gray-900">{ride.label}</span>:{" "}
         {ride.start_address} → {ride.end_address}
       </p>
       <div className="mt-6">
         {result.ok ? (
           <>
-            <Verdict text={result.text} usage={result.usage} snapshot={result.snapshot} />
+            <Forecast
+              text={result.text}
+              score={result.score}
+              usage={result.usage}
+              snapshot={result.snapshot}
+            />
             <div className="mt-6">
               <PushButton
                 rideId={ride.id}
                 rideLabel={ride.label}
                 verdictText={result.text}
+                score={result.score}
                 whenLocal={result.snapshot.as_of_local}
                 details={{
                   temperatureC: result.snapshot.temperature_c,
@@ -81,7 +87,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
             </div>
           </>
         ) : (
-          <p className="text-sm text-red-600">Could not generate verdict: {result.error}</p>
+          <p className="text-sm text-red-600">Could not generate forecast: {result.error}</p>
         )}
       </div>
     </Frame>
@@ -92,6 +98,7 @@ type PreviewResult =
   | {
       ok: true;
       text: string;
+      score: number | null;
       usage: { input_tokens: number; output_tokens: number };
       snapshot: WeatherSnapshot;
     }
@@ -99,25 +106,28 @@ type PreviewResult =
 
 async function runPreview(ride: RideForVerdict, preferences: string): Promise<PreviewResult> {
   try {
-    const { text, usage, snapshot } = await runVerdict(ride, { preferences });
-    return { ok: true, text, usage, snapshot };
+    const { text, score, usage, snapshot } = await runVerdict(ride, { preferences });
+    return { ok: true, text, score, usage, snapshot };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
-function Verdict({
+function Forecast({
   text,
+  score,
   usage,
   snapshot,
 }: {
   text: string;
+  score: number | null;
   usage: { input_tokens: number; output_tokens: number };
   snapshot: WeatherSnapshot;
 }) {
   return (
     <>
-      <p className="text-base font-medium text-gray-900">{text}</p>
+      {score != null ? <Stars score={score} /> : null}
+      <p className="mt-3 text-base font-medium text-gray-900">{text}</p>
       <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-gray-600">
         <Row k="When" v={`${snapshot.as_of_local} (${snapshot.timezone})`} />
         <Row
@@ -145,11 +155,21 @@ function Verdict({
   );
 }
 
+function Stars({ score }: { score: number }) {
+  const clamped = Math.max(0, Math.min(5, Math.round(score)));
+  return (
+    <div className="text-2xl" aria-label={`${clamped} of 5 stars`}>
+      <span className="text-amber-400">{"★".repeat(clamped)}</span>
+      <span className="text-gray-300">{"★".repeat(5 - clamped)}</span>
+    </div>
+  );
+}
+
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Verdict preview</h1>
+        <h1 className="text-2xl font-semibold">Forecast preview</h1>
         <Link href="/dashboard" className="text-sm text-gray-600 hover:underline">
           ← Dashboard
         </Link>

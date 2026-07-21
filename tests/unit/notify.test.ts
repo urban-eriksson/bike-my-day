@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createWebPushChannel,
   renderPushPayload,
+  renderStars,
   PushSubscriptionGoneError,
   type WebPushClient,
 } from "@/lib/notify/webpush";
@@ -109,5 +110,24 @@ describe("renderPushPayload", () => {
   it("renders a compact details line", () => {
     const payload = renderPushPayload(NOTIFICATION);
     expect(payload.body.split("\n")[1]).toBe("14 °C (feels 12) · 0 mm · 3 m/s (gusts 6)");
+  });
+
+  it("headlines the title with stars when a score is present", () => {
+    const payload = renderPushPayload({ ...NOTIFICATION, score: 3, url: "/rides/abc/forecast" });
+    expect(payload.title).toBe("Morning commute — ⭐⭐⭐☆☆");
+    expect(payload.url).toBe("/rides/abc/forecast");
+  });
+
+  it("falls back to the depart time when score is absent", () => {
+    expect(renderPushPayload(NOTIFICATION).title).toBe("Morning commute — 08:00");
+  });
+});
+
+describe("renderStars", () => {
+  it("fills earned stars and greys the rest, clamping out-of-range scores", () => {
+    expect(renderStars(0)).toBe("☆☆☆☆☆");
+    expect(renderStars(5)).toBe("⭐⭐⭐⭐⭐");
+    expect(renderStars(2)).toBe("⭐⭐☆☆☆");
+    expect(renderStars(7)).toBe("⭐⭐⭐⭐⭐");
   });
 });

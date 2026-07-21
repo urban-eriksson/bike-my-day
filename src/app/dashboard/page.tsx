@@ -61,7 +61,7 @@ export default async function DashboardPage() {
           <p className="mt-4 text-sm text-red-600">Failed to load rides: {error.message}</p>
         ) : !rides || rides.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">
-            No rides yet. Add one to start getting verdicts.
+            No rides yet. Add one to start getting forecasts.
           </p>
         ) : (
           <ul className="mt-4 flex flex-col gap-3">
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
                       href={`/rides/${r.id}/preview`}
                       className="text-xs font-medium text-gray-900 hover:underline"
                     >
-                      Preview verdict
+                      Preview forecast
                     </Link>
                     <form action={deleteRide}>
                       <input type="hidden" name="id" value={r.id} />
