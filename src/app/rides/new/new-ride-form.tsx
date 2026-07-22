@@ -1,6 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { createRide, type CreateRideState } from "../actions";
 import { AddressField } from "./address-field";
 
@@ -39,14 +42,13 @@ export function NewRideForm() {
       <input type="hidden" name="timezone" value={timezone} />
 
       <Field label="Label" htmlFor="label">
-        <input
+        <Input
           id="label"
           name="label"
           type="text"
           required
           defaultValue={v.label ?? ""}
           placeholder="Morning commute"
-          className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
       </Field>
 
@@ -67,13 +69,12 @@ export function NewRideForm() {
       />
 
       <Field label="Depart time" htmlFor="depart_local_time">
-        <input
+        <Input
           id="depart_local_time"
           name="depart_local_time"
           type="time"
           required
           defaultValue={v.depart_local_time ?? "08:00"}
-          className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
       </Field>
 
@@ -90,13 +91,12 @@ export function NewRideForm() {
 
       {roundTrip ? (
         <Field label="Return time" htmlFor="return_local_time">
-          <input
+          <Input
             id="return_local_time"
             name="return_local_time"
             type="time"
             required
             defaultValue={v.return_local_time ?? "17:00"}
-            className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
         </Field>
       ) : null}
@@ -107,7 +107,7 @@ export function NewRideForm() {
           {DAYS.map((d) => (
             <label
               key={d.value}
-              className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-foreground"
+              className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-accent-foreground/40 has-checked:bg-accent has-checked:font-medium has-checked:text-accent-foreground"
             >
               <input
                 type="checkbox"
@@ -122,13 +122,9 @@ export function NewRideForm() {
         </div>
       </fieldset>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending} className="mt-2">
         {pending ? "Saving…" : "Save ride"}
-      </button>
+      </Button>
 
       {state.message ? (
         <p role="status" className="text-sm text-destructive">
@@ -154,9 +150,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
-        {label}
-      </label>
+      <Label htmlFor={htmlFor}>{label}</Label>
       {children}
     </div>
   );

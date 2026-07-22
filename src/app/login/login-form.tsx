@@ -1,6 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   sendLoginCode,
   verifyLoginCode,
@@ -32,10 +35,8 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form className="mt-6 flex flex-col gap-3">
       <input type="hidden" name="next" value={next} />
-      <label htmlFor="email" className="text-sm font-medium">
-        Email
-      </label>
-      <input
+      <Label htmlFor="email">Email</Label>
+      <Input
         id="email"
         name="email"
         type="email"
@@ -45,9 +46,7 @@ export function LoginForm({ next }: { next: string }) {
         onChange={(e) => setEmail(e.target.value)}
         readOnly={codeSent}
         disabled={pending}
-        className={`rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-          codeSent ? "bg-muted text-muted-foreground" : ""
-        }`}
+        className={codeSent ? "bg-muted text-muted-foreground" : undefined}
         placeholder="you@example.com"
       />
       {codeSent ? (
@@ -58,10 +57,8 @@ export function LoginForm({ next }: { next: string }) {
 
       {codeSent ? (
         <>
-          <label htmlFor="token" className="text-sm font-medium">
-            One-time code
-          </label>
-          <input
+          <Label htmlFor="token">One-time code</Label>
+          <Input
             id="token"
             name="token"
             inputMode="numeric"
@@ -70,33 +67,24 @@ export function LoginForm({ next }: { next: string }) {
             autoComplete="one-time-code"
             required
             disabled={pending}
-            className="rounded-md border border-input bg-card px-3 py-2 text-sm tracking-widest focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="tracking-widest"
             placeholder="12345678"
           />
-          <button
-            type="submit"
-            formAction={verifyAction}
-            disabled={pending}
-            className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-          >
+          <Button type="submit" formAction={verifyAction} disabled={pending}>
             {verifyPending ? "Signing in…" : "Sign in"}
-          </button>
+          </Button>
         </>
       ) : null}
 
-      <button
+      <Button
         type="submit"
         formAction={sendAction}
         formNoValidate={codeSent}
         disabled={pending}
-        className={
-          codeSent
-            ? "rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary disabled:opacity-50"
-            : "rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-        }
+        variant={codeSent ? "outline" : "default"}
       >
         {sendPending ? "Sending…" : codeSent ? "Send a new code" : "Email me a code"}
-      </button>
+      </Button>
 
       {sendState.message ? (
         <p

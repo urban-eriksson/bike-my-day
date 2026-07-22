@@ -5,6 +5,8 @@ import { useActionState, useState } from "react";
 import { saveProfile, type SaveProfileState } from "@/app/settings/actions";
 import { NewRideForm } from "@/app/rides/new/new-ride-form";
 import { PushToggle } from "@/components/push-toggle";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const INITIAL: SaveProfileState = { status: "idle" };
 
@@ -39,29 +41,20 @@ export function WelcomeWizard({
             wind, darkness, whatever matters to you.
           </p>
           <form action={prefsAction} className="mt-4 flex flex-col gap-3">
-            <textarea
+            <Textarea
               name="preferences"
               rows={5}
               defaultValue={initialPreferences}
               placeholder="I hate riding under 5 °C. Fine in light rain. Anything over 8 m/s headwind is a no."
-              className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             />
             <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={prefsPending}
-                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-              >
+              <Button type="submit" disabled={prefsPending}>
                 {prefsPending ? "Saving…" : "Save"}
-              </button>
+              </Button>
               {prefsDone ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary"
-                >
+                <Button type="button" variant="outline" onClick={() => setStep(2)}>
                   Continue →
-                </button>
+                </Button>
               ) : (
                 <button
                   type="button"
@@ -89,13 +82,9 @@ export function WelcomeWizard({
           </p>
           <PushToggle />
           <div className="mt-6 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
+            <Button type="button" onClick={() => setStep(3)}>
               Continue →
-            </button>
+            </Button>
           </div>
         </section>
       ) : null}
