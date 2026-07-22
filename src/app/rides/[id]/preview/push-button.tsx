@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
 import { pushVerdict, type PushVerdictState } from "./actions";
 
 const INITIAL: PushVerdictState = { status: "idle" };
@@ -39,13 +40,9 @@ export function PushButton(props: PushButtonPayload) {
       <input type="hidden" name="precipitation_mm" value={String(props.details.precipitationMm)} />
       <input type="hidden" name="wind_speed_ms" value={String(props.details.windSpeedMs)} />
       <input type="hidden" name="wind_gusts_ms" value={String(props.details.windGustsMs)} />
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:opacity-50"
-      >
+      <Button type="submit" variant="outline" size="sm" disabled={pending}>
         {pending ? "Sending…" : "Send this forecast as a push"}
-      </button>
+      </Button>
       {state.message ? (
         <span
           role="status"

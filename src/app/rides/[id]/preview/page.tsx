@@ -160,7 +160,7 @@ function Forecast({
 function Stars({ score }: { score: number }) {
   const clamped = Math.max(0, Math.min(5, Math.round(score)));
   return (
-    <div className="text-2xl" aria-label={`${clamped} of 5 stars`}>
+    <div className="text-3xl tracking-wide" aria-label={`${clamped} of 5 stars`}>
       <span className="text-amber-400">{"★".repeat(clamped)}</span>
       <span className="text-border">{"★".repeat(5 - clamped)}</span>
     </div>

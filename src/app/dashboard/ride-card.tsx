@@ -77,7 +77,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
         <Sheet>
           <SheetTrigger asChild>
             <button type="button" className="flex-1 cursor-pointer text-left">
-              <div className="flex items-center gap-2 font-medium text-foreground">
+              <h3 className="flex items-center gap-2 text-base font-medium text-foreground">
                 {ride.label}
                 {ride.muted ? (
                   <BellOff
@@ -90,7 +90,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                     className="h-4 w-4 text-muted-foreground/70"
                   />
                 )}
-              </div>
+              </h3>
               <div className="mt-1 text-muted-foreground">
                 {shortAddress(ride.start_address)} → {shortAddress(ride.end_address)}{" "}
                 <span className="whitespace-nowrap text-muted-foreground/70">
@@ -174,7 +174,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                   {DAYS.map((d) => (
                     <label
                       key={d.value}
-                      className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-foreground"
+                      className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-accent-foreground/40 has-checked:bg-accent has-checked:font-medium has-checked:text-accent-foreground"
                     >
                       <input
                         type="checkbox"

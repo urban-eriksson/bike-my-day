@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { savePushSubscription, removePushSubscription } from "@/app/settings/actions";
+import { Button } from "@/components/ui/button";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -138,18 +139,17 @@ export function PushToggle({
   if (hideWhenSubscribed && subscribed && !message) return null;
   return (
     <div className="mt-4 flex items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={subscribed ? disable : enable}
         disabled={state.phase === "working"}
-        className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {state.phase === "working"
           ? "Working…"
           : subscribed
             ? "Disable notifications on this device"
             : "Enable notifications on this device"}
-      </button>
+      </Button>
       {message ? (
         <span
           role="status"
