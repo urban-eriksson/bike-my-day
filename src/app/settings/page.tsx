@@ -28,6 +28,10 @@ export default async function SettingsPage() {
         </Link>
       </div>
 
+      <p className="mt-2 text-sm text-gray-600">
+        Signed in as <span className="font-medium text-gray-900">{user.email}</span>
+      </p>
+
       <h2 className="mt-8 text-lg font-semibold">Ride preferences</h2>
       <p className="mt-1 text-sm text-gray-600">
         Tell the forecast generator what makes or breaks a ride for you. The text below is passed

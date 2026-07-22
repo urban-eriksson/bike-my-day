@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { distanceKm } from "@/lib/geo/distance";
+import { formatDays } from "@/lib/format-days";
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAYS = [
   { value: 1, label: "Mon" },
   { value: 2, label: "Tue" },
@@ -92,7 +92,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
               <div className="mt-1 text-xs text-gray-500">
                 {ride.depart_local_time.slice(0, 5)}
                 {ride.return_local_time ? ` ⇄ ${ride.return_local_time.slice(0, 5)}` : ""} ·{" "}
-                {ride.days_of_week.map((d) => DAY_NAMES[d]).join(" ")}
+                {formatDays(ride.days_of_week)}
               </div>
             </button>
           </SheetTrigger>
