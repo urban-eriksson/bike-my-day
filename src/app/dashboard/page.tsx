@@ -27,14 +27,14 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/settings"
-            className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary"
           >
             Settings
           </Link>
           <form action={signOut}>
             <button
               type="submit"
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary"
             >
               Sign out
             </button>
@@ -46,16 +46,16 @@ export default async function DashboardPage() {
         <div className="flex justify-end">
           <Link
             href="/rides/new"
-            className="rounded bg-black px-3 py-1.5 text-sm font-medium text-white"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             New ride
           </Link>
         </div>
 
         {error ? (
-          <p className="mt-4 text-sm text-red-600">Failed to load rides: {error.message}</p>
+          <p className="mt-4 text-sm text-destructive">Failed to load rides: {error.message}</p>
         ) : !rides || rides.length === 0 ? (
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-muted-foreground">
             No rides yet. Add one to start getting forecasts.
           </p>
         ) : (

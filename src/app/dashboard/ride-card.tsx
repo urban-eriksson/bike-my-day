@@ -72,24 +72,32 @@ export function RideCard({ ride }: { ride: RideCardData }) {
   );
 
   return (
-    <li className="rounded border border-gray-200 p-4 text-sm">
+    <li className="rounded-lg border border-border bg-card p-4 shadow-xs text-sm">
       <div className="flex items-start justify-between gap-4">
         <Sheet>
           <SheetTrigger asChild>
             <button type="button" className="flex-1 cursor-pointer text-left">
-              <div className="flex items-center gap-2 font-medium text-gray-900">
+              <div className="flex items-center gap-2 font-medium text-foreground">
                 {ride.label}
                 {ride.muted ? (
-                  <BellOff aria-label="Notifications paused" className="h-4 w-4 text-gray-400" />
+                  <BellOff
+                    aria-label="Notifications paused"
+                    className="h-4 w-4 text-muted-foreground/70"
+                  />
                 ) : (
-                  <Bell aria-label="Notifications on" className="h-4 w-4 text-gray-400" />
+                  <Bell
+                    aria-label="Notifications on"
+                    className="h-4 w-4 text-muted-foreground/70"
+                  />
                 )}
               </div>
-              <div className="mt-1 text-gray-600">
+              <div className="mt-1 text-muted-foreground">
                 {shortAddress(ride.start_address)} → {shortAddress(ride.end_address)}{" "}
-                <span className="whitespace-nowrap text-gray-400">({km.toFixed(1)} km)</span>
+                <span className="whitespace-nowrap text-muted-foreground/70">
+                  ({km.toFixed(1)} km)
+                </span>
               </div>
-              <div className="mt-1 text-xs text-gray-500">
+              <div className="mt-1 text-xs text-muted-foreground">
                 {ride.depart_local_time.slice(0, 5)}
                 {ride.return_local_time ? ` ⇄ ${ride.return_local_time.slice(0, 5)}` : ""} ·{" "}
                 {formatDays(ride.days_of_week)}
@@ -166,7 +174,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                   {DAYS.map((d) => (
                     <label
                       key={d.value}
-                      className="flex cursor-pointer items-center gap-1 rounded border border-gray-300 px-2 py-1 text-sm has-checked:border-black has-checked:bg-black has-checked:text-white"
+                      className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-foreground"
                     >
                       <input
                         type="checkbox"
@@ -200,7 +208,9 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                   <span
                     role="status"
                     className={
-                      state.status === "error" ? "text-sm text-red-600" : "text-sm text-green-700"
+                      state.status === "error"
+                        ? "text-sm text-destructive"
+                        : "text-sm text-green-700"
                     }
                   >
                     {state.message}
@@ -214,13 +224,13 @@ export function RideCard({ ride }: { ride: RideCardData }) {
         <div className="flex flex-col items-end gap-1">
           <Link
             href={`/rides/${ride.id}/preview`}
-            className="text-xs font-medium text-gray-900 hover:underline"
+            className="text-xs font-medium text-foreground hover:underline"
           >
             Preview forecast
           </Link>
           <form action={deleteRide}>
             <input type="hidden" name="id" value={ride.id} />
-            <button type="submit" className="text-xs text-red-600 hover:underline">
+            <button type="submit" className="text-xs text-destructive hover:underline">
               Delete
             </button>
           </form>

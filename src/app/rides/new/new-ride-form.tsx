@@ -46,7 +46,7 @@ export function NewRideForm() {
           required
           defaultValue={v.label ?? ""}
           placeholder="Morning commute"
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
       </Field>
 
@@ -73,7 +73,7 @@ export function NewRideForm() {
           type="time"
           required
           defaultValue={v.depart_local_time ?? "08:00"}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
       </Field>
 
@@ -96,7 +96,7 @@ export function NewRideForm() {
             type="time"
             required
             defaultValue={v.return_local_time ?? "17:00"}
-            className="rounded border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
         </Field>
       ) : null}
@@ -107,7 +107,7 @@ export function NewRideForm() {
           {DAYS.map((d) => (
             <label
               key={d.value}
-              className="flex cursor-pointer items-center gap-1 rounded border border-gray-300 px-2 py-1 text-sm has-checked:border-black has-checked:bg-black has-checked:text-white"
+              className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-foreground"
             >
               <input
                 type="checkbox"
@@ -125,18 +125,20 @@ export function NewRideForm() {
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 rounded bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="mt-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save ride"}
       </button>
 
       {state.message ? (
-        <p role="status" className="text-sm text-red-600">
+        <p role="status" className="text-sm text-destructive">
           {state.message}
         </p>
       ) : null}
 
-      {timezone ? <p className="text-xs text-gray-500">Detected timezone: {timezone}</p> : null}
+      {timezone ? (
+        <p className="text-xs text-muted-foreground">Detected timezone: {timezone}</p>
+      ) : null}
     </form>
   );
 }

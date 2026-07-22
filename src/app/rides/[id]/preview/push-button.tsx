@@ -42,14 +42,16 @@ export function PushButton(props: PushButtonPayload) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:opacity-50"
       >
         {pending ? "Sending…" : "Send this forecast as a push"}
       </button>
       {state.message ? (
         <span
           role="status"
-          className={state.status === "error" ? "text-sm text-red-600" : "text-sm text-green-700"}
+          className={
+            state.status === "error" ? "text-sm text-destructive" : "text-sm text-green-700"
+          }
         >
           {state.message}
         </span>

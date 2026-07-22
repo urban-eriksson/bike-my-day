@@ -117,16 +117,16 @@ export function PushSettings() {
 
   if (!VAPID_PUBLIC_KEY) {
     return (
-      <p className="mt-4 text-sm text-red-600">
+      <p className="mt-4 text-sm text-destructive">
         Push is not configured: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.
       </p>
     );
   }
   if (state.phase === "loading") {
-    return <p className="mt-4 text-sm text-gray-600">Checking notification support…</p>;
+    return <p className="mt-4 text-sm text-muted-foreground">Checking notification support…</p>;
   }
   if (state.phase === "unsupported") {
-    return <p className="mt-4 text-sm text-gray-600">{state.reason}</p>;
+    return <p className="mt-4 text-sm text-muted-foreground">{state.reason}</p>;
   }
 
   const subscribed = state.phase === "subscribed";
@@ -136,7 +136,7 @@ export function PushSettings() {
         type="button"
         onClick={subscribed ? disable : enable}
         disabled={state.phase === "working"}
-        className="rounded bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {state.phase === "working"
           ? "Working…"
@@ -147,7 +147,7 @@ export function PushSettings() {
       {message ? (
         <span
           role="status"
-          className={message.isError ? "text-sm text-red-600" : "text-sm text-green-700"}
+          className={message.isError ? "text-sm text-destructive" : "text-sm text-green-700"}
         >
           {message.text}
         </span>
