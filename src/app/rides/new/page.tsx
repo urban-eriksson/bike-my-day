@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PushToggle } from "@/components/push-toggle";
 import { NewRideForm } from "./new-ride-form";
 
 export const metadata = { title: "New ride — bike my day" };
@@ -13,11 +14,13 @@ export default function NewRidePage() {
         </Link>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        Addresses are resolved against Open-Meteo&apos;s place-name database — use a city, town, or
-        neighborhood name (e.g. <em>Uppsala</em>, <em>Södermalm Stockholm</em>). Street addresses
-        won&apos;t resolve.
+        Start typing an address or place and pick a suggestion — that pins the exact spot the
+        forecast is fetched for.
       </p>
       <NewRideForm />
+      <div className="mt-8 border-t border-border pt-4">
+        <PushToggle hideWhenSubscribed />
+      </div>
     </main>
   );
 }

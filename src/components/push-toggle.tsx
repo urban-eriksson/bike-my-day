@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { savePushSubscription, removePushSubscription } from "./actions";
+import { savePushSubscription, removePushSubscription } from "@/app/settings/actions";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -12,7 +12,12 @@ type PushState =
   | { phase: "subscribed" }
   | { phase: "working" };
 
-export function PushSettings() {
+export function PushToggle({
+  hideWhenSubscribed = false,
+}: {
+  /** Render nothing once subscribed — for inline prompts outside Settings. */
+  hideWhenSubscribed?: boolean;
+} = {}) {
   const [state, setState] = useState<PushState>({ phase: "loading" });
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -130,6 +135,7 @@ export function PushSettings() {
   }
 
   const subscribed = state.phase === "subscribed";
+  if (hideWhenSubscribed && subscribed && !message) return null;
   return (
     <div className="mt-4 flex items-center gap-3">
       <button

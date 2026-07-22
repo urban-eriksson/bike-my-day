@@ -13,12 +13,20 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: rides, error } = await supabase
-    .from("rides")
-    .select(
-      "id, label, start_address, start_lat, start_lon, end_address, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, muted, active",
-    )
-    .order("created_at", { ascending: false });
+  const [{ data: rides, error }, { data: profile }] = await Promise.all([
+    supabase
+      .from("rides")
+      .select(
+        "id, label, start_address, start_lat, start_lon, end_address, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, muted, active",
+      )
+      .order("created_at", { ascending: false }),
+    supabase.from("profiles").select("preferences").eq("user_id", user.id).maybeSingle(),
+  ]);
+
+  // Brand-new account (no preferences, no rides): guide through onboarding.
+  if ((profile?.preferences ?? "").trim() === "" && (rides?.length ?? 0) === 0 && !error) {
+    redirect("/welcome");
+  }
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
