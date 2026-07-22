@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { PushSettings } from "./push-settings";
+import { PushToggle } from "@/components/push-toggle";
 import { SettingsForm } from "./settings-form";
 
 export const metadata = { title: "Settings — bike my day" };
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
         Get each forecast as a push notification on this device. Enable it on every device you want
         notified.
       </p>
-      <PushSettings />
+      <PushToggle />
     </main>
   );
 }
