@@ -45,13 +45,13 @@ export function LoginForm({ next }: { next: string }) {
         onChange={(e) => setEmail(e.target.value)}
         readOnly={codeSent}
         disabled={pending}
-        className={`rounded border border-gray-300 px-3 py-2 text-sm ${
-          codeSent ? "bg-gray-100 text-gray-500" : ""
+        className={`rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+          codeSent ? "bg-muted text-muted-foreground" : ""
         }`}
         placeholder="you@example.com"
       />
       {codeSent ? (
-        <a href="/login" className="-mt-1 text-xs text-gray-600 underline">
+        <a href="/login" className="-mt-1 text-xs text-muted-foreground underline">
           Use a different email
         </a>
       ) : null}
@@ -70,14 +70,14 @@ export function LoginForm({ next }: { next: string }) {
             autoComplete="one-time-code"
             required
             disabled={pending}
-            className="rounded border border-gray-300 px-3 py-2 text-sm tracking-widest"
+            className="rounded-md border border-input bg-card px-3 py-2 text-sm tracking-widest focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             placeholder="12345678"
           />
           <button
             type="submit"
             formAction={verifyAction}
             disabled={pending}
-            className="rounded bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {verifyPending ? "Signing in…" : "Sign in"}
           </button>
@@ -91,8 +91,8 @@ export function LoginForm({ next }: { next: string }) {
         disabled={pending}
         className={
           codeSent
-            ? "rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
-            : "rounded bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            ? "rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary disabled:opacity-50"
+            : "rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         }
       >
         {sendPending ? "Sending…" : codeSent ? "Send a new code" : "Email me a code"}
@@ -102,14 +102,14 @@ export function LoginForm({ next }: { next: string }) {
         <p
           role="status"
           className={
-            sendState.status === "error" ? "text-sm text-red-600" : "text-sm text-green-700"
+            sendState.status === "error" ? "text-sm text-destructive" : "text-sm text-green-700"
           }
         >
           {sendState.message}
         </p>
       ) : null}
       {verifyState.message ? (
-        <p role="status" className="text-sm text-red-600">
+        <p role="status" className="text-sm text-destructive">
           {verifyState.message}
         </p>
       ) : null}

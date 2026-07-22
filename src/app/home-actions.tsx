@@ -35,12 +35,15 @@ export function HomeActions() {
   if (platform === "standalone") {
     return (
       <div className="mt-8 flex gap-3">
-        <Link href="/login" className="rounded bg-black px-4 py-2 text-sm font-medium text-white">
+        <Link
+          href="/login"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
           Sign in
         </Link>
         <Link
           href="/dashboard"
-          className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900"
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
         >
           Dashboard
         </Link>
@@ -51,7 +54,7 @@ export function HomeActions() {
   return (
     <div className="mt-8 max-w-md">
       <h2 className="text-lg font-semibold">Put it on your phone</h2>
-      <p className="mt-1 text-sm text-gray-600">
+      <p className="mt-1 text-sm text-muted-foreground">
         bike my day lives on your home screen — that&apos;s how the daily forecast reaches you as a
         notification.
       </p>
@@ -59,7 +62,7 @@ export function HomeActions() {
       {platform !== "android" ? (
         <div className="mt-4">
           <h3 className="text-sm font-semibold">iPhone</h3>
-          <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-gray-700">
+          <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-foreground/80">
             <li>
               Open <span className="font-medium">this page in Safari</span> on the phone
             </li>
@@ -77,7 +80,7 @@ export function HomeActions() {
       {platform !== "ios" ? (
         <div className="mt-4">
           <h3 className="text-sm font-semibold">Android</h3>
-          <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-gray-700">
+          <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-foreground/80">
             <li>Open this page in Chrome on the phone</li>
             <li>
               Tap the <span className="font-medium">⋮</span> menu
@@ -91,7 +94,7 @@ export function HomeActions() {
         </div>
       ) : null}
 
-      <p className="mt-6 text-xs text-gray-500">
+      <p className="mt-6 text-xs text-muted-foreground">
         Just looking around?{" "}
         <Link href="/login" className="underline">
           Continue in the browser

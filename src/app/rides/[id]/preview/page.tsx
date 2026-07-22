@@ -28,7 +28,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
   if (rideError || !ride) {
     return (
       <Frame>
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-destructive">
           Ride not found{rideError ? `: ${rideError.message}` : ""}.
         </p>
       </Frame>
@@ -58,8 +58,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
 
   return (
     <Frame>
-      <p className="text-sm text-gray-600">
-        Forecast for <span className="font-medium text-gray-900">{ride.label}</span>:{" "}
+      <p className="text-sm text-muted-foreground">
+        Forecast for <span className="font-medium text-foreground">{ride.label}</span>:{" "}
         {ride.start_address} → {ride.end_address}
       </p>
       <div className="mt-6">
@@ -89,7 +89,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
             </div>
           </>
         ) : (
-          <p className="text-sm text-red-600">Could not generate forecast: {result.error}</p>
+          <p className="text-sm text-destructive">Could not generate forecast: {result.error}</p>
         )}
       </div>
     </Frame>
@@ -129,8 +129,8 @@ function Forecast({
   return (
     <>
       {score != null ? <Stars score={score} /> : null}
-      <p className="mt-3 text-base font-medium text-gray-900">{text}</p>
-      <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-gray-600">
+      <p className="mt-3 text-base font-medium text-foreground">{text}</p>
+      <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
         <Row k="When" v={`${snapshot.as_of_local} (${snapshot.timezone})`} />
         <Row
           k="Temperature"
@@ -150,7 +150,7 @@ function Forecast({
           v={`${snapshot.sunrise_local.slice(11)} – ${snapshot.sunset_local.slice(11)}`}
         />
       </dl>
-      <p className="mt-6 text-xs text-gray-400">
+      <p className="mt-6 text-xs text-muted-foreground/70">
         Tokens used: {usage.input_tokens} in / {usage.output_tokens} out (Claude Haiku 4.5).
       </p>
     </>
@@ -162,7 +162,7 @@ function Stars({ score }: { score: number }) {
   return (
     <div className="text-2xl" aria-label={`${clamped} of 5 stars`}>
       <span className="text-amber-400">{"★".repeat(clamped)}</span>
-      <span className="text-gray-300">{"★".repeat(5 - clamped)}</span>
+      <span className="text-border">{"★".repeat(5 - clamped)}</span>
     </div>
   );
 }
@@ -172,7 +172,7 @@ function Frame({ children }: { children: React.ReactNode }) {
     <main className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Forecast preview</h1>
-        <Link href="/dashboard" className="text-sm text-gray-600 hover:underline">
+        <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
           ← Dashboard
         </Link>
       </div>
@@ -184,7 +184,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <>
-      <dt className="font-medium text-gray-700">{k}</dt>
+      <dt className="font-medium text-foreground/80">{k}</dt>
       <dd>{v}</dd>
     </>
   );

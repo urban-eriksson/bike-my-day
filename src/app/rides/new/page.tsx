@@ -8,11 +8,11 @@ export default function NewRidePage() {
     <main className="mx-auto max-w-xl px-6 py-12">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">New ride</h1>
-        <Link href="/dashboard" className="text-sm text-gray-600 hover:underline">
+        <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
           ← Dashboard
         </Link>
       </div>
-      <p className="mt-2 text-sm text-gray-600">
+      <p className="mt-2 text-sm text-muted-foreground">
         Addresses are resolved against Open-Meteo&apos;s place-name database — use a city, town, or
         neighborhood name (e.g. <em>Uppsala</em>, <em>Södermalm Stockholm</em>). Street addresses
         won&apos;t resolve.

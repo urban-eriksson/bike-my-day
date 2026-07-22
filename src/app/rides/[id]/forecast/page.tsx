@@ -30,7 +30,7 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
   if (!ride) {
     return (
       <Frame>
-        <p className="mt-6 text-sm text-red-600">Ride not found.</p>
+        <p className="mt-6 text-sm text-destructive">Ride not found.</p>
       </Frame>
     );
   }
@@ -46,19 +46,19 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
 
   return (
     <Frame>
-      <p className="text-sm text-gray-600">
-        <span className="font-medium text-gray-900">{ride.label}</span>: {ride.start_address} →{" "}
+      <p className="text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{ride.label}</span>: {ride.start_address} →{" "}
         {ride.end_address}
       </p>
 
       {notification ? (
         <div className="mt-6">
           {notification.score != null ? <Stars score={notification.score} /> : null}
-          <p className="mt-3 text-base font-medium text-gray-900">{notification.verdict_text}</p>
+          <p className="mt-3 text-base font-medium text-foreground">{notification.verdict_text}</p>
           <SnapshotDetails snapshot={notification.forecast_json as unknown as WeatherSnapshot} />
         </div>
       ) : (
-        <p className="mt-6 text-sm text-gray-600">
+        <p className="mt-6 text-sm text-muted-foreground">
           No forecast for this ride yet — it arrives with the evening notification.{" "}
           <Link href={`/rides/${ride.id}/preview`} className="underline">
             Generate a preview now
@@ -75,7 +75,7 @@ function Stars({ score }: { score: number }) {
   return (
     <div className="text-2xl" aria-label={`${clamped} of 5 stars`}>
       <span className="text-amber-400">{"★".repeat(clamped)}</span>
-      <span className="text-gray-300">{"★".repeat(5 - clamped)}</span>
+      <span className="text-border">{"★".repeat(5 - clamped)}</span>
     </div>
   );
 }
@@ -83,7 +83,7 @@ function Stars({ score }: { score: number }) {
 function SnapshotDetails({ snapshot }: { snapshot: WeatherSnapshot | null }) {
   if (!snapshot || typeof snapshot.as_of_local !== "string") return null;
   return (
-    <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-gray-600">
+    <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
       <Row k="When" v={`${snapshot.as_of_local} (${snapshot.timezone})`} />
       <Row
         k="Temperature"
@@ -108,7 +108,7 @@ function Frame({ children }: { children: React.ReactNode }) {
     <main className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Forecast</h1>
-        <Link href="/dashboard" className="text-sm text-gray-600 hover:underline">
+        <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
           ← Dashboard
         </Link>
       </div>
@@ -120,7 +120,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <>
-      <dt className="font-medium text-gray-700">{k}</dt>
+      <dt className="font-medium text-foreground/80">{k}</dt>
       <dd>{v}</dd>
     </>
   );

@@ -102,13 +102,13 @@ export function AddressField({
         }}
         onFocus={() => setOpen(suggestions.length > 0)}
         placeholder={placeholder}
-        className="rounded border border-gray-300 px-3 py-2 text-sm"
+        className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       />
       <input type="hidden" name={`${name}_lat`} value={picked ? String(picked.latitude) : ""} />
       <input type="hidden" name={`${name}_lon`} value={picked ? String(picked.longitude) : ""} />
 
       {open && !picked && value.trim().length >= MIN_QUERY_LENGTH && suggestions.length > 0 ? (
-        <ul className="absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded border border-gray-300 bg-white shadow-sm">
+        <ul className="absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-md border border-border bg-popover shadow-sm">
           {suggestions.map((hit, i) => (
             <li key={`${hit.label}-${i}`}>
               <button
@@ -118,7 +118,7 @@ export function AddressField({
                   setPicked(hit);
                   setOpen(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                className="w-full px-3 py-2 text-left text-sm hover:bg-secondary"
               >
                 {hit.label}
               </button>
