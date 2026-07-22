@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { RideCard, type RideCardData } from "./ride-card";
 
-export const metadata = { title: "Dashboard — bike my day" };
+export const metadata = { title: "bike my day" };
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-xl font-semibold">bike my day</h1>
         <div className="flex items-center gap-3">
           <Link
             href="/settings"
@@ -42,13 +42,8 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <p className="mt-2 text-sm text-gray-600">
-        Signed in as <span className="font-medium text-gray-900">{user.email}</span>.
-      </p>
-
-      <section className="mt-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Your rides</h2>
+      <section className="mt-8">
+        <div className="flex justify-end">
           <Link
             href="/rides/new"
             className="rounded bg-black px-3 py-1.5 text-sm font-medium text-white"
