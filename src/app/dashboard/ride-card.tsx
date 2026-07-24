@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { deleteRide, updateRide, type UpdateRideState } from "@/app/rides/actions";
 import { AddressField } from "@/app/rides/new/address-field";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -217,24 +228,50 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                   </span>
                 ) : null}
               </div>
+
+              <div className="mt-2 flex justify-start border-t border-border pt-4 pb-[env(safe-area-inset-bottom)]">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 /> Delete ride
+                    </Button>
+                  </AlertDialogTrigger>
+                  {/* The dialog renders in a portal, so this form is not nested
+                      in the surrounding edit form. */}
+                  <AlertDialogContent size="sm">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete &ldquo;{ride.label}&rdquo;?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Its forecasts stop tonight. There is no undo.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <form action={deleteRide} className="contents">
+                        <input type="hidden" name="id" value={ride.id} />
+                        <AlertDialogAction type="submit" variant="destructive">
+                          Delete ride
+                        </AlertDialogAction>
+                      </form>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </form>
           </SheetContent>
         </Sheet>
 
-        <div className="flex flex-col items-end gap-1">
-          <Link
-            href={`/rides/${ride.id}/preview`}
-            className="text-xs font-medium text-foreground hover:underline"
-          >
-            Preview forecast
-          </Link>
-          <form action={deleteRide}>
-            <input type="hidden" name="id" value={ride.id} />
-            <button type="submit" className="text-xs text-destructive hover:underline">
-              Delete
-            </button>
-          </form>
-        </div>
+        <Link
+          href={`/rides/${ride.id}/preview`}
+          className="shrink-0 text-xs font-medium text-accent-foreground hover:underline"
+        >
+          Preview forecast
+        </Link>
       </div>
     </li>
   );

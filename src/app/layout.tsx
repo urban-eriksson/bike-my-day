@@ -28,7 +28,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  // Matches --background (warm near-white) so the status bar blends with the
+  // app in standalone mode; viewport-fit=cover lets the sticky header extend
+  // under the iOS notch with its safe-area padding.
+  themeColor: "#fcfaf4",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

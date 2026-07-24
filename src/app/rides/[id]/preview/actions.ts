@@ -92,7 +92,7 @@ export async function pushVerdict(
   if (devices.length === 0) {
     return {
       status: "error",
-      message: "No subscribed devices — enable push notifications in Settings first.",
+      message: "No subscribed devices — enable push notifications in Preferences first.",
     };
   }
 
@@ -119,7 +119,7 @@ export async function pushVerdict(
       status: "error",
       message: firstError
         ? `Push failed: ${firstError}`
-        : "All subscriptions had expired — enable push notifications again in Settings.",
+        : "All subscriptions had expired — enable push notifications again in Preferences.",
     };
   }
   return { status: "sent", message: `Pushed to ${sent} device(s).` };

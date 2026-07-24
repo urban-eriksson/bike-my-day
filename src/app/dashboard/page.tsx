@@ -1,7 +1,9 @@
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AppHeader } from "@/components/app-header";
+import { Button } from "@/components/ui/button";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { signOut } from "./actions";
 import { RideCard, type RideCardData } from "./ride-card";
 
 export const metadata = { title: "bike my day" };
@@ -28,70 +30,62 @@ export default async function DashboardPage() {
     redirect("/welcome");
   }
 
-  return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">bike my day</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/settings"
-            className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary"
-          >
-            Settings
-          </Link>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
+  const hasRides = !!rides && rides.length > 0;
 
-      <section className="mt-8">
-        <div className="flex justify-end">
-          <Link
-            href="/rides/new"
-            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            New ride
-          </Link>
-        </div>
+  return (
+    <>
+      <AppHeader />
+      <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
+        <h1 className="sr-only">Your rides</h1>
 
         {error ? (
-          <p className="mt-4 text-sm text-destructive">Failed to load rides: {error.message}</p>
-        ) : !rides || rides.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            No rides yet. Add one to start getting forecasts.
-          </p>
+          <p className="text-sm text-destructive">Failed to load rides: {error.message}</p>
+        ) : !hasRides ? (
+          <div className="mt-20 flex flex-col items-center gap-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              No rides yet — add one and tomorrow&apos;s forecast finds you.
+            </p>
+            <Button asChild>
+              <Link href="/rides/new">
+                <Plus /> Add a ride
+              </Link>
+            </Button>
+          </div>
         ) : (
-          <ul className="mt-4 flex flex-col gap-3">
-            {rides.map((r) => (
-              <RideCard
-                key={r.id}
-                ride={
-                  {
-                    id: r.id,
-                    label: r.label,
-                    start_address: r.start_address,
-                    start_lat: Number(r.start_lat),
-                    start_lon: Number(r.start_lon),
-                    end_address: r.end_address,
-                    end_lat: Number(r.end_lat),
-                    end_lon: Number(r.end_lon),
-                    depart_local_time: String(r.depart_local_time),
-                    return_local_time: r.return_local_time ? String(r.return_local_time) : null,
-                    days_of_week: r.days_of_week as number[],
-                    muted: r.muted,
-                  } satisfies RideCardData
-                }
-              />
-            ))}
-          </ul>
+          <>
+            <div className="flex justify-end">
+              <Button asChild size="sm" variant="outline">
+                <Link href="/rides/new">
+                  <Plus /> New ride
+                </Link>
+              </Button>
+            </div>
+            <ul className="mt-4 flex flex-col gap-3">
+              {rides.map((r) => (
+                <RideCard
+                  key={r.id}
+                  ride={
+                    {
+                      id: r.id,
+                      label: r.label,
+                      start_address: r.start_address,
+                      start_lat: Number(r.start_lat),
+                      start_lon: Number(r.start_lon),
+                      end_address: r.end_address,
+                      end_lat: Number(r.end_lat),
+                      end_lon: Number(r.end_lon),
+                      depart_local_time: String(r.depart_local_time),
+                      return_local_time: r.return_local_time ? String(r.return_local_time) : null,
+                      days_of_week: r.days_of_week as number[],
+                      muted: r.muted,
+                    } satisfies RideCardData
+                  }
+                />
+              ))}
+            </ul>
+          </>
         )}
-      </section>
-    </main>
+      </main>
+    </>
   );
 }
