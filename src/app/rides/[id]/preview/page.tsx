@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { compass } from "@/lib/geo/compass";
 import { redirect } from "next/navigation";
+import { AppHeader } from "@/components/app-header";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
@@ -169,15 +169,13 @@ function Stars({ score }: { score: number }) {
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <div className="flex items-center justify-between">
+    <>
+      <AppHeader />
+      <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
         <h1 className="text-2xl font-semibold">Forecast preview</h1>
-        <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
-          ← Dashboard
-        </Link>
-      </div>
-      {children}
-    </main>
+        {children}
+      </main>
+    </>
   );
 }
 
