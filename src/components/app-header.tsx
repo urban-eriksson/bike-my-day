@@ -61,7 +61,10 @@ export function AppHeader() {
       </div>
 
       {/* Dawn horizon: the header's only decoration. */}
-      <div aria-hidden className="h-px bg-gradient-to-r from-transparent via-ring/70 to-transparent" />
+      <div
+        aria-hidden
+        className="h-px bg-gradient-to-r from-transparent via-ring/70 to-transparent"
+      />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent size="sm">
