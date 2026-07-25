@@ -153,7 +153,9 @@ export function PushToggle({
       {message ? (
         <span
           role="status"
-          className={message.isError ? "text-sm text-destructive" : "text-sm text-green-700"}
+          className={
+            message.isError ? "text-sm text-destructive" : "text-sm font-medium text-primary"
+          }
         >
           {message.text}
         </span>

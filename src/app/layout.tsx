@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   // Matches --background (warm near-white) so the status bar blends with the
   // app in standalone mode; viewport-fit=cover lets the sticky header extend
   // under the iOS notch with its safe-area padding.
-  themeColor: "#fcfaf4",
+  themeColor: "#f6fbf8",
   viewportFit: "cover",
 };
 

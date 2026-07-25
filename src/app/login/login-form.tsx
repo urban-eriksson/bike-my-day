@@ -90,7 +90,9 @@ export function LoginForm({ next }: { next: string }) {
         <p
           role="status"
           className={
-            sendState.status === "error" ? "text-sm text-destructive" : "text-sm text-green-700"
+            sendState.status === "error"
+              ? "text-sm text-destructive"
+              : "text-sm font-medium text-primary"
           }
         >
           {sendState.message}

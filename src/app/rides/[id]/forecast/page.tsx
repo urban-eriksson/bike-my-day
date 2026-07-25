@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { compass } from "@/lib/geo/compass";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
+import { SnapshotDetails, Verdict } from "@/components/forecast";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 
@@ -47,22 +47,24 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
 
   return (
     <Frame>
-      <p className="text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{ride.label}</span>: {ride.start_address} →{" "}
+      <p className="mt-1 text-[0.95rem] text-muted-foreground">
+        <span className="font-medium text-foreground">{ride.label}</span> · {ride.start_address} →{" "}
         {ride.end_address}
       </p>
 
-      {notification ? (
+      {notification?.verdict_text ? (
         <div className="mt-6">
-          {notification.score != null ? <Stars score={notification.score} /> : null}
-          <p className="mt-3 text-base font-medium text-foreground">{notification.verdict_text}</p>
+          <Verdict score={notification.score} text={notification.verdict_text} />
           <SnapshotDetails snapshot={notification.forecast_json as unknown as WeatherSnapshot} />
         </div>
       ) : (
-        <p className="mt-6 text-sm text-muted-foreground">
+        <p className="mt-6 text-[0.95rem] text-muted-foreground">
           No forecast for this ride yet — it arrives with the evening notification.{" "}
-          <Link href={`/rides/${ride.id}/preview`} className="underline">
-            Generate a preview now
+          <Link
+            href={`/rides/${ride.id}/preview`}
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            Generate one now
           </Link>
           .
         </p>
@@ -71,56 +73,14 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
   );
 }
 
-function Stars({ score }: { score: number }) {
-  const clamped = Math.max(0, Math.min(5, Math.round(score)));
-  return (
-    <div className="text-3xl tracking-wide" aria-label={`${clamped} of 5 stars`}>
-      <span className="text-amber-400">{"★".repeat(clamped)}</span>
-      <span className="text-border">{"★".repeat(5 - clamped)}</span>
-    </div>
-  );
-}
-
-function SnapshotDetails({ snapshot }: { snapshot: WeatherSnapshot | null }) {
-  if (!snapshot || typeof snapshot.as_of_local !== "string") return null;
-  return (
-    <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-      <Row k="When" v={`${snapshot.as_of_local} (${snapshot.timezone})`} />
-      <Row
-        k="Temperature"
-        v={`${snapshot.temperature_c} °C (feels ${snapshot.apparent_temperature_c})`}
-      />
-      <Row
-        k="Precipitation"
-        v={`${snapshot.precipitation_mm} mm${snapshot.precipitation_probability_pct === null ? "" : ` (${snapshot.precipitation_probability_pct}%)`}`}
-      />
-      <Row
-        k="Wind"
-        v={`${snapshot.wind_speed_ms} m/s from ${compass(snapshot.wind_direction_from_deg)}, gusts ${snapshot.wind_gusts_ms} m/s`}
-      />
-      <Row k="Cloud cover" v={`${snapshot.cloud_cover_pct}%`} />
-      <Row k="Sun" v={`${snapshot.sunrise_local.slice(11)} – ${snapshot.sunset_local.slice(11)}`} />
-    </dl>
-  );
-}
-
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AppHeader />
+      <AppHeader back />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="text-2xl font-semibold">Forecast</h1>
+        <h1 className="font-heading text-2xl font-semibold">Forecast</h1>
         {children}
       </main>
-    </>
-  );
-}
-
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <>
-      <dt className="font-medium text-foreground/80">{k}</dt>
-      <dd>{v}</dd>
     </>
   );
 }

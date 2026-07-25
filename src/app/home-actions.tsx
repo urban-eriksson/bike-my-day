@@ -53,7 +53,7 @@ export function HomeActions() {
 
   return (
     <div className="mt-8 max-w-md">
-      <h2 className="text-lg font-semibold">Put it on your phone</h2>
+      <h2 className="font-heading text-xl font-semibold">Put it on your phone</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         bike my day lives on your home screen — that&apos;s how the daily forecast reaches you as a
         notification.
