@@ -1,10 +1,10 @@
 "use client";
 
-import { BellOff, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { BellOff, CloudSun, Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { deleteRide, updateRide, type UpdateRideState } from "@/app/rides/actions";
 import { AddressField } from "@/app/rides/new/address-field";
-import { ForecastButton } from "./forecast-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -291,7 +291,14 @@ export function RideCard({ ride }: { ride: RideCardData }) {
 
       <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3">
         <span className="text-sm text-muted-foreground">{km.toFixed(1)} km</span>
-        <ForecastButton rideId={ride.id} />
+        {/* Default prefetch fetches the route's loading boundary, so the
+            "checking the weather" screen is on-screen the instant this is
+            tapped — the wait is the LLM call, and it must be visible. */}
+        <Button asChild size="sm">
+          <Link href={`/rides/${ride.id}/preview`}>
+            <CloudSun aria-hidden /> Forecast
+          </Link>
+        </Button>
       </div>
     </li>
   );

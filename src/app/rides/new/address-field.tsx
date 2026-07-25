@@ -48,12 +48,16 @@ export function AddressField({
   const [picked, setPicked] = useState<GeocodeHit | null>(null);
   const [suggestions, setSuggestions] = useState<GeocodeHit[]>([]);
   const [open, setOpen] = useState(false);
+  // A prefilled address is already the answer. Without this, opening the edit
+  // sheet immediately geocoded both saved addresses and dropped a suggestion
+  // list under each one — the address appearing to render twice.
+  const [edited, setEdited] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Render-gating (below) hides stale suggestions; the effect only fetches,
   // so all setState happens in the async callback (react-hooks rule).
   useEffect(() => {
-    if (picked || value.trim().length < MIN_QUERY_LENGTH) return;
+    if (!edited || picked || value.trim().length < MIN_QUERY_LENGTH) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
@@ -73,7 +77,7 @@ export function AddressField({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [value, picked]);
+  }, [value, picked, edited]);
 
   // Close the dropdown when tapping/clicking outside the field.
   useEffect(() => {
@@ -86,7 +90,7 @@ export function AddressField({
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-[0.95rem] font-medium">
         {label}
       </label>
       <input
@@ -99,10 +103,11 @@ export function AddressField({
         onChange={(e) => {
           setValue(e.target.value);
           setPicked(null);
+          setEdited(true);
         }}
-        onFocus={() => setOpen(suggestions.length > 0)}
+        onFocus={() => setOpen(edited && suggestions.length > 0)}
         placeholder={placeholder}
-        className="rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="h-11 rounded-lg border border-input bg-card px-3 text-base focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       />
       <input type="hidden" name={`${name}_lat`} value={picked ? String(picked.latitude) : ""} />
       <input type="hidden" name={`${name}_lon`} value={picked ? String(picked.longitude) : ""} />
@@ -118,7 +123,7 @@ export function AddressField({
                   setPicked(hit);
                   setOpen(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-secondary"
+                className="w-full px-3 py-3 text-left text-[0.95rem] hover:bg-secondary active:bg-secondary"
               >
                 {hit.label}
               </button>
