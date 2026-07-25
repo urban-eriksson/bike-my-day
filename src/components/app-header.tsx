@@ -58,7 +58,7 @@ export function AppHeader({ back = false }: { back?: boolean }) {
               <Settings className="size-5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem asChild>
               <Link href="/settings">
                 <SlidersHorizontal /> Preferences
