@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Solid background: required for maskable icons, and iOS flattens
        transparency to black otherwise. -->
-  <rect width="512" height="512" fill="#0f172a" />
+  <rect width="512" height="512" fill="#00381c" />
   <circle cx="402" cy="112" r="42" fill="#fbbf24" />
   <g stroke="#ffffff" stroke-width="22" stroke-linecap="round" fill="none">
     <circle cx="150" cy="345" r="70" />

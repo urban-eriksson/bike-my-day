@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Every page here is dynamic, and since Next 15 the client cache for
+    // dynamic segments defaults to 0s — so going back re-ran auth and the
+    // queries over the network every time (~700ms). Mutations all call
+    // revalidatePath, which clears this cache, so a short window is safe and
+    // makes back-navigation instant.
+    staleTimes: { dynamic: 60, static: 300 },
+  },
   async headers() {
     return [
       {
