@@ -107,7 +107,7 @@ export function NewRideForm() {
           {DAYS.map((d) => (
             <label
               key={d.value}
-              className="flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-sm has-checked:border-accent-foreground/40 has-checked:bg-accent has-checked:font-medium has-checked:text-accent-foreground"
+              className="flex cursor-pointer items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors has-checked:border-primary has-checked:bg-primary/10 has-checked:font-medium has-checked:text-primary has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
             >
               <input
                 type="checkbox"

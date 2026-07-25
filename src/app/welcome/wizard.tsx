@@ -35,7 +35,9 @@ export function WelcomeWizard({
 
       {step === 1 ? (
         <section className="mt-4">
-          <h2 className="text-lg font-semibold">What makes or breaks a ride for you?</h2>
+          <h2 className="font-heading text-xl font-semibold">
+            What makes or breaks a ride for you?
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Your words go straight to the forecast generator, so be specific — temperatures, rain,
             wind, darkness, whatever matters to you.
@@ -76,7 +78,7 @@ export function WelcomeWizard({
 
       {step === 2 ? (
         <section className="mt-4">
-          <h2 className="text-lg font-semibold">Get forecasts on this phone</h2>
+          <h2 className="font-heading text-xl font-semibold">Get forecasts on this phone</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             The nightly forecast arrives as a notification — no need to open the app.
           </p>
@@ -91,7 +93,7 @@ export function WelcomeWizard({
 
       {step === 3 ? (
         <section className="mt-4">
-          <h2 className="text-lg font-semibold">Your first ride</h2>
+          <h2 className="font-heading text-xl font-semibold">Your first ride</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             A recurring ride — like the commute — gets a fresh forecast every night before it.
           </p>

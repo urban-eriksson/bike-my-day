@@ -1,6 +1,6 @@
-import { compass } from "@/lib/geo/compass";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
+import { SnapshotDetails, Verdict } from "@/components/forecast";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
@@ -58,9 +58,9 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
 
   return (
     <Frame>
-      <p className="text-sm text-muted-foreground">
-        Forecast for <span className="font-medium text-foreground">{ride.label}</span>:{" "}
-        {ride.start_address} → {ride.end_address}
+      <p className="mt-1 text-[0.95rem] text-muted-foreground">
+        <span className="font-medium text-foreground">{ride.label}</span> · {ride.start_address} →{" "}
+        {ride.end_address}
       </p>
       <div className="mt-6">
         {result.ok ? (
@@ -128,28 +128,8 @@ function Forecast({
 }) {
   return (
     <>
-      {score != null ? <Stars score={score} /> : null}
-      <p className="mt-3 text-base font-medium text-foreground">{text}</p>
-      <dl className="mt-6 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-        <Row k="When" v={`${snapshot.as_of_local} (${snapshot.timezone})`} />
-        <Row
-          k="Temperature"
-          v={`${snapshot.temperature_c} °C (feels ${snapshot.apparent_temperature_c})`}
-        />
-        <Row
-          k="Precipitation"
-          v={`${snapshot.precipitation_mm} mm${snapshot.precipitation_probability_pct === null ? "" : ` (${snapshot.precipitation_probability_pct}%)`}`}
-        />
-        <Row
-          k="Wind"
-          v={`${snapshot.wind_speed_ms} m/s from ${compass(snapshot.wind_direction_from_deg)}, gusts ${snapshot.wind_gusts_ms} m/s`}
-        />
-        <Row k="Cloud cover" v={`${snapshot.cloud_cover_pct}%`} />
-        <Row
-          k="Sun"
-          v={`${snapshot.sunrise_local.slice(11)} – ${snapshot.sunset_local.slice(11)}`}
-        />
-      </dl>
+      <Verdict score={score} text={text} />
+      <SnapshotDetails snapshot={snapshot} />
       <p className="mt-6 text-xs text-muted-foreground/70">
         Tokens used: {usage.input_tokens} in / {usage.output_tokens} out (Claude Haiku 4.5).
       </p>
@@ -157,33 +137,14 @@ function Forecast({
   );
 }
 
-function Stars({ score }: { score: number }) {
-  const clamped = Math.max(0, Math.min(5, Math.round(score)));
-  return (
-    <div className="text-3xl tracking-wide" aria-label={`${clamped} of 5 stars`}>
-      <span className="text-amber-400">{"★".repeat(clamped)}</span>
-      <span className="text-border">{"★".repeat(5 - clamped)}</span>
-    </div>
-  );
-}
-
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AppHeader />
+      <AppHeader back />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="text-2xl font-semibold">Forecast preview</h1>
+        <h1 className="font-heading text-2xl font-semibold">Forecast</h1>
         {children}
       </main>
-    </>
-  );
-}
-
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <>
-      <dt className="font-medium text-foreground/80">{k}</dt>
-      <dd>{v}</dd>
     </>
   );
 }

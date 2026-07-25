@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Settings, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ArrowLeft, LogOut, Settings, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { deleteAccount, signOut } from "@/app/dashboard/actions";
 import {
@@ -21,19 +21,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Shared top bar for signed-in pages. Sticky with safe-area padding so it
  * sits under the iOS status bar in standalone (home-screen) mode.
+ *
+ * Pass `back` on any page below the dashboard: the wordmark keeps its place
+ * and its job (it already goes home) and gains a leading arrow, so there is
+ * one obvious way back rather than two competing ones.
  */
-export function AppHeader() {
+export function AppHeader({ back = false }: { back?: boolean }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pending, startTransition] = useTransition();
 
   return (
     <header className="sticky top-0 z-40 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-      <div className="mx-auto flex h-12 max-w-2xl items-center justify-between px-4 sm:px-6">
-        <Link href="/dashboard" className="font-heading text-lg font-semibold tracking-tight">
+      <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4 sm:px-6">
+        <Link
+          href="/dashboard"
+          aria-label={back ? "Back to your rides" : "Your rides"}
+          className="group -ml-1 flex items-center gap-1.5 rounded-md py-1 pr-2 pl-1 font-heading text-lg font-semibold tracking-tight outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {back ? (
+            <ArrowLeft
+              aria-hidden
+              className="size-5 text-primary transition-transform duration-150 group-hover:-translate-x-0.5 motion-reduce:transition-none"
+            />
+          ) : null}
           bike my day
         </Link>
 
@@ -60,10 +75,10 @@ export function AppHeader() {
         </DropdownMenu>
       </div>
 
-      {/* Dawn horizon: the header's only decoration. */}
+      {/* Horizon line: the header's only decoration. */}
       <div
         aria-hidden
-        className="h-px bg-gradient-to-r from-transparent via-ring/70 to-transparent"
+        className="h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent"
       />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
@@ -81,7 +96,13 @@ export function AppHeader() {
               disabled={pending}
               onClick={() => startTransition(() => deleteAccount())}
             >
-              {pending ? "Deleting…" : "Delete account"}
+              {pending ? (
+                <>
+                  <Spinner /> Deleting…
+                </>
+              ) : (
+                "Delete account"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

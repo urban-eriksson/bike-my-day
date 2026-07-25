@@ -21,15 +21,15 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <AppHeader />
+      <AppHeader back />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="text-2xl font-semibold">Preferences</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h1 className="font-heading text-2xl font-semibold">Preferences</h1>
+        <p className="mt-2 text-[0.95rem] text-muted-foreground">
           Signed in as <span className="font-medium text-foreground">{user.email}</span>
         </p>
 
-        <h2 className="mt-8 text-lg font-semibold">What makes or breaks a ride</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h2 className="mt-9 text-xl font-semibold">What makes or breaks a ride</h2>
+        <p className="mt-1.5 text-[0.95rem] text-muted-foreground">
           Your words go straight to the forecast generator — be specific. Example:{" "}
           <em>
             &ldquo;I hate riding under 5&nbsp;°C. Fine in light rain but not heavy. Anything over
@@ -38,8 +38,8 @@ export default async function SettingsPage() {
         </p>
         <SettingsForm initialPreferences={profile?.preferences ?? ""} />
 
-        <h2 className="mt-10 text-lg font-semibold">Notifications</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h2 className="mt-11 text-xl font-semibold">Notifications</h2>
+        <p className="mt-1.5 text-[0.95rem] text-muted-foreground">
           Get each forecast as a push notification on this device. Enable it on every device you
           want notified.
         </p>

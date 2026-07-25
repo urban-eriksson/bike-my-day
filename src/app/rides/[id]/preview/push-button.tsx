@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { pushVerdict, type PushVerdictState } from "./actions";
 
 const INITIAL: PushVerdictState = { status: "idle" };
@@ -40,14 +41,22 @@ export function PushButton(props: PushButtonPayload) {
       <input type="hidden" name="precipitation_mm" value={String(props.details.precipitationMm)} />
       <input type="hidden" name="wind_speed_ms" value={String(props.details.windSpeedMs)} />
       <input type="hidden" name="wind_gusts_ms" value={String(props.details.windGustsMs)} />
-      <Button type="submit" variant="outline" size="sm" disabled={pending}>
-        {pending ? "Sending…" : "Send this forecast as a push"}
+      <Button type="submit" variant="outline" disabled={pending}>
+        {pending ? (
+          <>
+            <Spinner /> Sending…
+          </>
+        ) : (
+          "Send this forecast as a push"
+        )}
       </Button>
       {state.message ? (
         <span
           role="status"
           className={
-            state.status === "error" ? "text-sm text-destructive" : "text-sm text-green-700"
+            state.status === "error"
+              ? "text-sm text-destructive"
+              : "text-sm font-medium text-primary"
           }
         >
           {state.message}

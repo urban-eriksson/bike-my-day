@@ -18,7 +18,7 @@ export default async function LoginPage({
             "radial-gradient(closest-side, color-mix(in oklab, var(--accent) 85%, transparent), transparent)",
         }}
       />
-      <h1 className="text-2xl font-semibold">Sign in</h1>
+      <h1 className="font-heading text-2xl font-semibold">Sign in</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         We&apos;ll email you a one-time code. No password needed.
       </p>

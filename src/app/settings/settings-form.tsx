@@ -26,7 +26,9 @@ export function SettingsForm({ initialPreferences }: { initialPreferences: strin
           <span
             role="status"
             className={
-              state.status === "error" ? "text-sm text-destructive" : "text-sm text-green-700"
+              state.status === "error"
+                ? "text-sm text-destructive"
+                : "text-sm font-medium text-primary"
             }
           >
             {state.message}

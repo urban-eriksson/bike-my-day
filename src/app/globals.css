@@ -48,31 +48,38 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Two hues, two jobs. Green is every control the rider acts on; amber belongs
+ * to the sky — stars, sun, weather highlights — and appears nowhere else.
+ * Cards are pure white on a faintly green paper so edges stay crisp.
+ */
 :root {
-  --background: oklch(0.986 0.005 85);
-  --foreground: oklch(0.24 0.02 265);
-  --card: oklch(0.995 0.003 85);
-  --card-foreground: oklch(0.24 0.02 265);
-  --popover: oklch(0.995 0.003 85);
-  --popover-foreground: oklch(0.24 0.02 265);
-  --primary: oklch(0.29 0.03 265);
-  --primary-foreground: oklch(0.985 0.005 85);
-  --secondary: oklch(0.955 0.01 85);
-  --secondary-foreground: oklch(0.29 0.03 265);
-  --muted: oklch(0.958 0.008 85);
-  --muted-foreground: oklch(0.49 0.02 265);
-  --accent: oklch(0.93 0.05 80);
-  --accent-foreground: oklch(0.42 0.09 60);
+  --background: oklch(0.984 0.007 155);
+  --foreground: oklch(0.24 0.025 160);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.025 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.025 160);
+  --primary: oklch(0.52 0.125 155);
+  --primary-foreground: oklch(0.99 0.012 150);
+  /* Darker green under the primary fill: the physical edge a button sits on. */
+  --primary-edge: oklch(0.4 0.105 155);
+  --secondary: oklch(0.945 0.022 155);
+  --secondary-foreground: oklch(0.33 0.06 155);
+  --muted: oklch(0.957 0.012 155);
+  --muted-foreground: oklch(0.475 0.022 160);
+  --accent: oklch(0.93 0.055 80);
+  --accent-foreground: oklch(0.44 0.1 62);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.905 0.012 85);
-  --input: oklch(0.905 0.012 85);
-  --ring: oklch(0.75 0.13 70);
+  --border: oklch(0.9 0.015 155);
+  --input: oklch(0.9 0.015 155);
+  --ring: oklch(0.62 0.13 155);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -92,6 +99,7 @@
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
+  --primary-edge: oklch(0.75 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -126,6 +134,11 @@
   }
   html {
     @apply font-sans;
+    /* The phone is the primary device and the app holds very little content,
+       so everything reads one step larger than the browser default. Tailwind
+       sizing is rem-based, so spacing scales with it. */
+    font-size: 17px;
+    -webkit-text-size-adjust: 100%;
   }
 }
 

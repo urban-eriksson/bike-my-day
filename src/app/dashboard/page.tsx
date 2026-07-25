@@ -41,11 +41,11 @@ export default async function DashboardPage() {
         {error ? (
           <p className="text-sm text-destructive">Failed to load rides: {error.message}</p>
         ) : !hasRides ? (
-          <div className="mt-20 flex flex-col items-center gap-4 text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="mt-20 flex flex-col items-center gap-5 text-center">
+            <p className="max-w-xs text-base text-muted-foreground">
               No rides yet — add one and tomorrow&apos;s forecast finds you.
             </p>
-            <Button asChild>
+            <Button asChild size="lg">
               <Link href="/rides/new">
                 <Plus /> Add a ride
               </Link>
@@ -54,13 +54,13 @@ export default async function DashboardPage() {
         ) : (
           <>
             <div className="flex justify-end">
-              <Button asChild size="sm" variant="outline">
+              <Button asChild variant="outline">
                 <Link href="/rides/new">
                   <Plus /> New ride
                 </Link>
               </Button>
             </div>
-            <ul className="mt-4 flex flex-col gap-3">
+            <ul className="mt-4 flex flex-col gap-4">
               {rides.map((r) => (
                 <RideCard
                   key={r.id}
