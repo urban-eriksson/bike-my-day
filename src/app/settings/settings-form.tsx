@@ -3,11 +3,13 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/components/i18n-provider";
 import { saveProfile, type SaveProfileState } from "./actions";
 
 const INITIAL: SaveProfileState = { status: "idle" };
 
 export function SettingsForm({ initialPreferences }: { initialPreferences: string }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState(saveProfile, INITIAL);
 
   return (
@@ -16,11 +18,11 @@ export function SettingsForm({ initialPreferences }: { initialPreferences: strin
         name="preferences"
         rows={6}
         defaultValue={initialPreferences}
-        placeholder="I hate riding under 5 °C. Fine in light rain. Anything over 8 m/s headwind is a no."
+        placeholder={t.settings.prefsPlaceholder}
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save preferences"}
+          {pending ? t.ride.saving : t.settings.savePrefs}
         </Button>
         {state.message ? (
           <span

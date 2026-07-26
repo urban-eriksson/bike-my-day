@@ -22,7 +22,7 @@ export type PushButtonPayload = {
   };
 };
 
-export function PushButton(props: PushButtonPayload) {
+export function PushButton(props: PushButtonPayload & { label: string; sendingLabel: string }) {
   const [state, formAction, pending] = useActionState(pushVerdict, INITIAL);
 
   return (
@@ -44,10 +44,10 @@ export function PushButton(props: PushButtonPayload) {
       <Button type="submit" variant="outline" disabled={pending}>
         {pending ? (
           <>
-            <Spinner /> Sending…
+            <Spinner /> {props.sendingLabel}
           </>
         ) : (
-          "Send this forecast as a push"
+          props.label
         )}
       </Button>
       {state.message ? (

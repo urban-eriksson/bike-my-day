@@ -3,12 +3,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
+import { getT } from "@/lib/i18n/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "./ride-card";
 
-export const metadata = { title: "bike my day" };
+export async function generateMetadata() {
+  return { title: (await getT()).meta.home };
+}
 
 export default async function DashboardPage() {
+  const t = await getT();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -36,18 +40,16 @@ export default async function DashboardPage() {
     <>
       <AppHeader />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="sr-only">Your rides</h1>
+        <h1 className="sr-only">{t.dashboard.heading}</h1>
 
         {error ? (
-          <p className="text-sm text-destructive">Failed to load rides: {error.message}</p>
+          <p className="text-sm text-destructive">{t.dashboard.loadFailed(error.message)}</p>
         ) : !hasRides ? (
           <div className="mt-20 flex flex-col items-center gap-5 text-center">
-            <p className="max-w-xs text-base text-muted-foreground">
-              No rides yet — add one and tomorrow&apos;s forecast finds you.
-            </p>
+            <p className="max-w-xs text-base text-muted-foreground">{t.dashboard.empty}</p>
             <Button asChild size="lg">
               <Link href="/rides/new">
-                <Plus /> Add a ride
+                <Plus /> {t.dashboard.addRide}
               </Link>
             </Button>
           </div>
@@ -56,7 +58,7 @@ export default async function DashboardPage() {
             <div className="flex justify-end">
               <Button asChild variant="outline">
                 <Link href="/rides/new">
-                  <Plus /> New ride
+                  <Plus /> {t.dashboard.newRide}
                 </Link>
               </Button>
             </div>

@@ -5,6 +5,7 @@ import { BellOff, CloudSun, Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { deleteRide, updateRide, type UpdateRideState } from "@/app/rides/actions";
 import { AddressField } from "@/app/rides/new/address-field";
+import { useT } from "@/components/i18n-provider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,15 +34,8 @@ import { Switch } from "@/components/ui/switch";
 import { distanceKm } from "@/lib/geo/distance";
 import { formatDays } from "@/lib/format-days";
 
-const DAYS = [
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
-  { value: 0, label: "Sun" },
-];
+/** Display order, Monday first; names come from the dictionary. */
+const DAY_VALUES = [1, 2, 3, 4, 5, 6, 0];
 
 export type RideCardData = {
   id: string;
@@ -74,6 +68,7 @@ function shortAddress(label: string): string {
 const INITIAL: UpdateRideState = { status: "idle" };
 
 export function RideCard({ ride }: { ride: RideCardData }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState(updateRide, INITIAL);
   const [roundTrip, setRoundTrip] = useState(ride.return_local_time != null);
   const [notify, setNotify] = useState(!ride.muted);
@@ -98,7 +93,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
               {/* Only the exception is worth a badge; notifications on is the norm. */}
               {ride.muted ? (
                 <span className="mt-0.5 flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                  <BellOff aria-hidden className="size-3.5" /> Paused
+                  <BellOff aria-hidden className="size-3.5" /> {t.dashboard.paused}
                 </span>
               ) : null}
             </div>
@@ -121,7 +116,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                 {ride.depart_local_time.slice(0, 5)}
                 {ride.return_local_time ? ` ⇄ ${ride.return_local_time.slice(0, 5)}` : ""}
               </span>{" "}
-              · {formatDays(ride.days_of_week)}
+              · {formatDays(ride.days_of_week, t.days)}
             </div>
           </button>
         </SheetTrigger>
@@ -135,35 +130,35 @@ export function RideCard({ ride }: { ride: RideCardData }) {
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <SheetHeader>
-            <SheetTitle>Edit ride</SheetTitle>
-            <SheetDescription>Changes apply from the next forecast.</SheetDescription>
+            <SheetTitle>{t.ride.editTitle}</SheetTitle>
+            <SheetDescription>{t.ride.editSubtitle}</SheetDescription>
           </SheetHeader>
 
           <form action={formAction} className="flex flex-col gap-4 px-4 pb-8">
             <input type="hidden" name="id" value={ride.id} />
 
             <div className="flex flex-col gap-1">
-              <Label htmlFor={`label-${ride.id}`}>Label</Label>
+              <Label htmlFor={`label-${ride.id}`}>{t.ride.label}</Label>
               <Input id={`label-${ride.id}`} name="label" required defaultValue={ride.label} />
             </div>
 
             <AddressField
               id={`start-${ride.id}`}
               name="start_address"
-              label="Starting point"
-              placeholder="Datavägen 9, Järfälla"
+              label={t.ride.start}
+              placeholder={t.ride.startPlaceholder}
               defaultValue={ride.start_address}
             />
             <AddressField
               id={`end-${ride.id}`}
               name="end_address"
-              label="Destination"
-              placeholder="Storgatan 1, Stockholm"
+              label={t.ride.end}
+              placeholder={t.ride.endPlaceholder}
               defaultValue={ride.end_address}
             />
 
             <div className="flex flex-col gap-1">
-              <Label htmlFor={`depart-${ride.id}`}>Depart time</Label>
+              <Label htmlFor={`depart-${ride.id}`}>{t.ride.departTime}</Label>
               <Input
                 id={`depart-${ride.id}`}
                 name="depart_local_time"
@@ -180,12 +175,12 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                 checked={roundTrip}
                 onCheckedChange={(v) => setRoundTrip(v === true)}
               />
-              <Label htmlFor={`roundtrip-${ride.id}`}>Round trip</Label>
+              <Label htmlFor={`roundtrip-${ride.id}`}>{t.ride.roundTrip}</Label>
             </div>
 
             {roundTrip ? (
               <div className="flex flex-col gap-1">
-                <Label htmlFor={`return-${ride.id}`}>Return time</Label>
+                <Label htmlFor={`return-${ride.id}`}>{t.ride.returnTime}</Label>
                 <Input
                   id={`return-${ride.id}`}
                   name="return_local_time"
@@ -197,21 +192,21 @@ export function RideCard({ ride }: { ride: RideCardData }) {
             ) : null}
 
             <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium">Days of week</legend>
+              <legend className="text-sm font-medium">{t.ride.daysOfWeek}</legend>
               <div className="flex flex-wrap gap-2">
-                {DAYS.map((d) => (
+                {DAY_VALUES.map((value) => (
                   <label
-                    key={d.value}
+                    key={value}
                     className="flex cursor-pointer items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors has-checked:border-primary has-checked:bg-primary/10 has-checked:font-medium has-checked:text-primary has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
                   >
                     <input
                       type="checkbox"
                       name="days_of_week"
-                      value={d.value}
-                      defaultChecked={ride.days_of_week.includes(d.value)}
+                      value={value}
+                      defaultChecked={ride.days_of_week.includes(value)}
                       className="sr-only"
                     />
-                    {d.label}
+                    {t.days.short[value]}
                   </label>
                 ))}
               </div>
@@ -223,7 +218,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                 checked={notify}
                 onCheckedChange={(v) => setNotify(v === true)}
               />
-              <Label htmlFor={`notify-${ride.id}`}>Notifications</Label>
+              <Label htmlFor={`notify-${ride.id}`}>{t.ride.notifications}</Label>
               {/* Switch is not a form control; mirror it for the action. */}
               {notify ? null : <input type="hidden" name="muted" value="on" />}
             </div>
@@ -232,7 +227,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
               <Button type="submit" disabled={pending}>
                 {pending ? (
                   <>
-                    <Spinner /> Saving…
+                    <Spinner /> {t.ride.saving}
                   </>
                 ) : (
                   "Save changes"
@@ -261,20 +256,20 @@ export function RideCard({ ride }: { ride: RideCardData }) {
                     size="sm"
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
-                    <Trash2 /> Delete ride
+                    <Trash2 /> {t.ride.delete}
                   </Button>
                 </AlertDialogTrigger>
                 {/* The dialog renders in a portal, so this form is not nested
                       in the surrounding edit form. */}
                 <AlertDialogContent size="sm">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete &ldquo;{ride.label}&rdquo;?</AlertDialogTitle>
+                    <AlertDialogTitle>{t.ride.deleteTitle(ride.label)}</AlertDialogTitle>
                     <AlertDialogDescription>
                       Its forecasts stop tonight. There is no undo.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t.deleteAccountDialog.cancel}</AlertDialogCancel>
                     <form action={deleteRide} className="contents">
                       <input type="hidden" name="id" value={ride.id} />
                       <AlertDialogAction type="submit" variant="destructive">
@@ -290,13 +285,13 @@ export function RideCard({ ride }: { ride: RideCardData }) {
       </Sheet>
 
       <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3">
-        <span className="text-sm text-muted-foreground">{km.toFixed(1)} km</span>
+        <span className="text-sm text-muted-foreground">{t.dashboard.km(km.toFixed(1))}</span>
         {/* Default prefetch fetches the route's loading boundary, so the
             "checking the weather" screen is on-screen the instant this is
             tapped — the wait is the LLM call, and it must be visible. */}
         <Button asChild size="sm">
           <Link href={`/rides/${ride.id}/preview`}>
-            <CloudSun aria-hidden /> Forecast
+            <CloudSun aria-hidden /> {t.dashboard.forecast}
           </Link>
         </Button>
       </div>

@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
+import { getT } from "@/lib/i18n/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PushToggle } from "@/components/push-toggle";
 import { SettingsForm } from "./settings-form";
 
-export const metadata = { title: "Preferences — bike my day" };
+export async function generateMetadata() {
+  return { title: (await getT()).meta.preferences };
+}
 
 export default async function SettingsPage() {
+  const t = await getT();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -23,25 +27,20 @@ export default async function SettingsPage() {
     <>
       <AppHeader back />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="font-heading text-2xl font-semibold">Preferences</h1>
+        <h1 className="font-heading text-2xl font-semibold">{t.settings.title}</h1>
         <p className="mt-2 text-[0.95rem] text-muted-foreground">
-          Signed in as <span className="font-medium text-foreground">{user.email}</span>
+          {t.settings.signedInAs} <span className="font-medium text-foreground">{user.email}</span>
         </p>
 
-        <h2 className="mt-9 text-xl font-semibold">What makes or breaks a ride</h2>
+        <h2 className="mt-9 text-xl font-semibold">{t.settings.prefsHeading}</h2>
         <p className="mt-1.5 text-[0.95rem] text-muted-foreground">
-          Your words go straight to the forecast generator — be specific. Example:{" "}
-          <em>
-            &ldquo;I hate riding under 5&nbsp;°C. Fine in light rain but not heavy. Anything over
-            8&nbsp;m/s headwind is a no.&rdquo;
-          </em>
+          {t.settings.prefsHelp} <em>{t.settings.prefsExample}</em>
         </p>
         <SettingsForm initialPreferences={profile?.preferences ?? ""} />
 
-        <h2 className="mt-11 text-xl font-semibold">Notifications</h2>
+        <h2 className="mt-11 text-xl font-semibold">{t.settings.notificationsHeading}</h2>
         <p className="mt-1.5 text-[0.95rem] text-muted-foreground">
-          Get each forecast as a push notification on this device. Enable it on every device you
-          want notified.
+          {t.settings.notificationsHelp}
         </p>
         <PushToggle />
       </main>

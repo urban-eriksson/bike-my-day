@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { bearing, type LatLon } from "@/lib/geo/bearing";
 import { compass } from "@/lib/geo/compass";
 import { windComponents } from "@/lib/geo/wind";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 
 /**
@@ -19,6 +20,8 @@ export type VerdictInput = {
   snapshot: WeatherSnapshot;
   /** Round trip: forecast at the destination for the return departure hour. */
   returnSnapshot?: WeatherSnapshot | null;
+  /** Language to write the verdict in. Defaults to Swedish, like the app. */
+  locale?: Locale;
 };
 
 export type VerdictPrompt = {
@@ -31,7 +34,7 @@ const round = (n: number, digits = 1): number => {
   return Math.round(n * f) / f;
 };
 
-const SYSTEM_PROMPT = `You are the forecast generator for a bike-commute weather app.
+const SYSTEM_PROMPT_BASE = `You are the forecast generator for a bike-commute weather app.
 
 You receive (a) a structured weather snapshot for a specific hour and place, including wind decomposed into headwind / crosswind along the rider's route, and (b) the user's own free-text preferences describing what makes or breaks a ride for them.
 
@@ -40,7 +43,7 @@ Your output has EXACTLY this shape — a score line, then the text:
 SCORE: <integer 0-5>
 <one or at most two short sentences>
 
-The score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. When a return leg is given, cover BOTH legs in the text (out first, then return) and make the score reflect the WORSE leg — the rider commits to the whole day. The text is plain English — no Markdown, no emoji, no preamble — and:
+The score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. When a return leg is given, cover BOTH legs in the text (out first, then return) and make the score reflect the WORSE leg — the rider commits to the whole day. The text is plain prose — no Markdown, no emoji, no preamble — and:
 
 - Tells the rider whether tomorrow's ride looks good, marginal, or bad, consistent with the score.
 - Names the one or two factors that drove that judgment, in concrete numbers (°C, mm, m/s, compass direction).
@@ -48,6 +51,21 @@ The score rates how good the ride will be, honoring the user's preferences: 5 = 
 - Uses headwind / tailwind language directly (the wind component along their leg is given to you — do not re-derive it from raw direction).
 
 Do not hedge with "you might want to consider". Be direct. The rider will read this in 2 seconds and decide.`;
+
+/**
+ * The rider reads the verdict in a notification, in whatever language the app
+ * is set to — so the model writes it directly rather than us translating
+ * afterwards. Only the prose is localised: the SCORE line stays machine-shaped
+ * so parsing is language-independent.
+ */
+const LANGUAGE_RULES: Record<Locale, string> = {
+  en: "Write the text in English.",
+  sv: "Write the text in Swedish (svenska), in natural idiomatic prose — not translated-sounding English. Use Swedish weather vocabulary (motvind, medvind, byar, nederbörd, halka). Keep the units as given (°C, mm, m/s) and keep the compass direction as the short code you are given. The SCORE line itself stays exactly as specified, in English.",
+};
+
+function systemPrompt(locale: Locale): string {
+  return `${SYSTEM_PROMPT_BASE}\n\n${LANGUAGE_RULES[locale]}`;
+}
 
 function legLines(snapshot: WeatherSnapshot, legBearing: number): string[] {
   const wind = windComponents(legBearing, snapshot.wind_direction_from_deg, snapshot.wind_speed_ms);
@@ -110,7 +128,7 @@ export function buildVerdictPrompt(input: VerdictInput): VerdictPrompt {
     input.preferences.trim() === "" ? "(none — apply sensible defaults)" : input.preferences.trim(),
   );
 
-  return { system: SYSTEM_PROMPT, user: lines.join("\n") };
+  return { system: systemPrompt(input.locale ?? DEFAULT_LOCALE), user: lines.join("\n") };
 }
 
 export type VerdictResult = {

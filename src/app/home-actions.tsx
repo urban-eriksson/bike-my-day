@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
+import { useT } from "@/components/i18n-provider";
 
 type Platform = "detecting" | "standalone" | "ios" | "android" | "desktop";
 
@@ -22,6 +23,7 @@ function detectPlatform(): Platform {
  * the client snapshot swaps in the real platform at hydration.
  */
 export function HomeActions() {
+  const t = useT();
   const platform = useSyncExternalStore<Platform>(
     subscribeNever,
     detectPlatform,
@@ -39,13 +41,13 @@ export function HomeActions() {
           href="/login"
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          Sign in
+          {t.home.signIn}
         </Link>
         <Link
           href="/dashboard"
           className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
         >
-          Dashboard
+          {t.home.dashboard}
         </Link>
       </div>
     );
@@ -53,53 +55,39 @@ export function HomeActions() {
 
   return (
     <div className="mt-8 max-w-md">
-      <h2 className="font-heading text-xl font-semibold">Put it on your phone</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        bike my day lives on your home screen — that&apos;s how the daily forecast reaches you as a
-        notification.
-      </p>
+      <h2 className="font-heading text-xl font-semibold">{t.home.installHeading}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{t.home.installHelp}</p>
 
       {platform !== "android" ? (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold">iPhone</h3>
+          <h3 className="text-sm font-semibold">{t.home.iphone}</h3>
           <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-foreground/80">
-            <li>
-              Open <span className="font-medium">this page in Safari</span> on the phone
-            </li>
-            <li>
-              Tap the <span className="font-medium">Share</span> button
-            </li>
-            <li>
-              Choose <span className="font-medium">Add to Home Screen</span>
-            </li>
-            <li>Open the app from the new icon and sign in</li>
+            <li>{t.home.iosStep1}</li>
+            <li>{t.home.iosStep2}</li>
+            <li>{t.home.iosStep3}</li>
+            <li>{t.home.installStepSignIn}</li>
           </ol>
         </div>
       ) : null}
 
       {platform !== "ios" ? (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold">Android</h3>
+          <h3 className="text-sm font-semibold">{t.home.android}</h3>
           <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-foreground/80">
-            <li>Open this page in Chrome on the phone</li>
-            <li>
-              Tap the <span className="font-medium">⋮</span> menu
-            </li>
-            <li>
-              Choose <span className="font-medium">Add to Home screen</span> (or{" "}
-              <span className="font-medium">Install app</span>)
-            </li>
-            <li>Open the app from the new icon and sign in</li>
+            <li>{t.home.androidStep1}</li>
+            <li>{t.home.androidStep2}</li>
+            <li>{t.home.androidStep3}</li>
+            <li>{t.home.installStepSignIn}</li>
           </ol>
         </div>
       ) : null}
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Just looking around?{" "}
+        {t.home.browsing}{" "}
         <Link href="/login" className="underline">
-          Continue in the browser
+          {t.home.continueInBrowser}
         </Link>
-        {platform === "desktop" ? " — but notifications only work from the installed app." : "."}
+        {platform === "desktop" ? t.home.desktopNote : "."}
       </p>
     </div>
   );

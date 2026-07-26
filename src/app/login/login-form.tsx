@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/components/i18n-provider";
 import {
   sendLoginCode,
   verifyLoginCode,
@@ -22,6 +23,7 @@ const INITIAL_VERIFY: VerifyCodeState = { status: "idle" };
  * (not disabled: read-only fields still submit their value).
  */
 export function LoginForm({ next }: { next: string }) {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [sendState, sendAction, sendPending] = useActionState(sendLoginCode, INITIAL_SEND);
   const [verifyState, verifyAction, verifyPending] = useActionState(
@@ -35,7 +37,7 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form className="mt-6 flex flex-col gap-3">
       <input type="hidden" name="next" value={next} />
-      <Label htmlFor="email">Email</Label>
+      <Label htmlFor="email">{t.login.email}</Label>
       <Input
         id="email"
         name="email"
@@ -47,17 +49,17 @@ export function LoginForm({ next }: { next: string }) {
         readOnly={codeSent}
         disabled={pending}
         className={codeSent ? "bg-muted text-muted-foreground" : undefined}
-        placeholder="you@example.com"
+        placeholder={t.login.emailPlaceholder}
       />
       {codeSent ? (
         <a href="/login" className="-mt-1 text-xs text-muted-foreground underline">
-          Use a different email
+          {t.login.useDifferentEmail}
         </a>
       ) : null}
 
       {codeSent ? (
         <>
-          <Label htmlFor="token">One-time code</Label>
+          <Label htmlFor="token">{t.login.code}</Label>
           <Input
             id="token"
             name="token"
@@ -68,10 +70,10 @@ export function LoginForm({ next }: { next: string }) {
             required
             disabled={pending}
             className="tracking-widest"
-            placeholder="12345678"
+            placeholder={t.login.codePlaceholder}
           />
           <Button type="submit" formAction={verifyAction} disabled={pending}>
-            {verifyPending ? "Signing in…" : "Sign in"}
+            {verifyPending ? t.login.signingIn : t.login.signIn}
           </Button>
         </>
       ) : null}
@@ -83,7 +85,7 @@ export function LoginForm({ next }: { next: string }) {
         disabled={pending}
         variant={codeSent ? "outline" : "default"}
       >
-        {sendPending ? "Sending…" : codeSent ? "Send a new code" : "Email me a code"}
+        {sendPending ? t.login.sending : codeSent ? t.login.sendNewCode : t.login.emailMeCode}
       </Button>
 
       {sendState.message ? (

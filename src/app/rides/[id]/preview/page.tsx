@@ -2,14 +2,20 @@ import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { SnapshotDetails, Verdict } from "@/components/forecast";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
+import { getLocale, getT } from "@/lib/i18n/server";
+import type { Locale } from "@/lib/i18n/locale";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 import { PushButton } from "./push-button";
 
-export const metadata = { title: "Forecast preview — bike my day" };
+export async function generateMetadata() {
+  return { title: (await getT()).meta.forecast };
+}
 
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -27,9 +33,10 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
 
   if (rideError || !ride) {
     return (
-      <Frame>
+      <Frame t={t}>
         <p className="text-sm text-destructive">
-          Ride not found{rideError ? `: ${rideError.message}` : ""}.
+          {t.forecast.notFound}
+          {rideError ? `: ${rideError.message}` : ""}.
         </p>
       </Frame>
     );
@@ -54,10 +61,10 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
     timezone: ride.timezone,
   };
 
-  const result = await runPreview(rideForVerdict, profile?.preferences ?? "");
+  const result = await runPreview(rideForVerdict, profile?.preferences ?? "", locale);
 
   return (
-    <Frame>
+    <Frame t={t}>
       <p className="mt-1 text-[0.95rem] text-muted-foreground">
         <span className="font-medium text-foreground">{ride.label}</span> · {ride.start_address} →{" "}
         {ride.end_address}
@@ -70,6 +77,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
               score={result.score}
               usage={result.usage}
               snapshot={result.snapshot}
+              t={t}
             />
             <div className="mt-6">
               <PushButton
@@ -85,11 +93,13 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
                   windSpeedMs: result.snapshot.wind_speed_ms,
                   windGustsMs: result.snapshot.wind_gusts_ms,
                 }}
+                label={t.forecast.sendPush}
+                sendingLabel={t.forecast.sendingPush}
               />
             </div>
           </>
         ) : (
-          <p className="text-sm text-destructive">Could not generate forecast: {result.error}</p>
+          <p className="text-sm text-destructive">{t.forecast.failed(result.error)}</p>
         )}
       </div>
     </Frame>
@@ -106,9 +116,13 @@ type PreviewResult =
     }
   | { ok: false; error: string };
 
-async function runPreview(ride: RideForVerdict, preferences: string): Promise<PreviewResult> {
+async function runPreview(
+  ride: RideForVerdict,
+  preferences: string,
+  locale: Locale,
+): Promise<PreviewResult> {
   try {
-    const { text, score, usage, snapshot } = await runVerdict(ride, { preferences });
+    const { text, score, usage, snapshot } = await runVerdict(ride, { preferences, locale });
     return { ok: true, text, score, usage, snapshot };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -120,29 +134,31 @@ function Forecast({
   score,
   usage,
   snapshot,
+  t,
 }: {
   text: string;
   score: number | null;
   usage: { input_tokens: number; output_tokens: number };
   snapshot: WeatherSnapshot;
+  t: Dictionary;
 }) {
   return (
     <>
-      <Verdict score={score} text={text} />
-      <SnapshotDetails snapshot={snapshot} />
+      <Verdict score={score} text={text} t={t} />
+      <SnapshotDetails snapshot={snapshot} t={t} />
       <p className="mt-6 text-xs text-muted-foreground/70">
-        Tokens used: {usage.input_tokens} in / {usage.output_tokens} out (Claude Haiku 4.5).
+        {t.forecast.tokens(usage.input_tokens, usage.output_tokens)}
       </p>
     </>
   );
 }
 
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({ children, t }: { children: React.ReactNode; t: Dictionary }) {
   return (
     <>
       <AppHeader back />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="font-heading text-2xl font-semibold">Forecast</h1>
+        <h1 className="font-heading text-2xl font-semibold">{t.forecast.title}</h1>
         {children}
       </main>
     </>

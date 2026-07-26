@@ -1,6 +1,9 @@
+import { getT } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
-export const metadata = { title: "Sign in — bike my day" };
+export async function generateMetadata() {
+  return { title: (await getT()).meta.signIn };
+}
 
 export default async function LoginPage({
   searchParams,
@@ -8,6 +11,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
+  const t = await getT();
   return (
     <main className="relative mx-auto flex min-h-screen max-w-sm flex-col justify-center overflow-hidden px-6 py-12">
       <div
@@ -18,10 +22,8 @@ export default async function LoginPage({
             "radial-gradient(closest-side, color-mix(in oklab, var(--accent) 85%, transparent), transparent)",
         }}
       />
-      <h1 className="font-heading text-2xl font-semibold">Sign in</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        We&apos;ll email you a one-time code. No password needed.
-      </p>
+      <h1 className="font-heading text-2xl font-semibold">{t.login.title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t.login.subtitle}</p>
       <LoginForm next={next ?? "/dashboard"} />
     </main>
   );

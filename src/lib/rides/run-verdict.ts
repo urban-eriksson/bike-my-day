@@ -1,4 +1,5 @@
 import { generateVerdict } from "@/lib/llm/verdict";
+import type { Locale } from "@/lib/i18n/locale";
 import { nextOccurrence } from "@/lib/rides/next-occurrence";
 import type { WeatherProvider, WeatherSnapshot } from "@/lib/weather/types";
 import { createOpenMeteoProvider } from "@/lib/weather/openMeteo";
@@ -30,6 +31,8 @@ export type VerdictRun = {
 
 export type RunVerdictOptions = {
   preferences: string;
+  /** Language for the generated text; defaults to the app default. */
+  locale?: Locale;
   /** Inject providers for tests. */
   weatherProvider?: WeatherProvider;
   now?: Date;
@@ -81,6 +84,7 @@ export async function runVerdict(
     start: { lat: ride.start_lat, lon: ride.start_lon },
     end: { lat: ride.end_lat, lon: ride.end_lon },
     preferences: options.preferences,
+    locale: options.locale,
     snapshot,
     returnSnapshot,
   });
