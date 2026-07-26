@@ -7,6 +7,7 @@ import { NewRideForm } from "@/app/rides/new/new-ride-form";
 import { PushToggle } from "@/components/push-toggle";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/components/i18n-provider";
 
 const INITIAL: SaveProfileState = { status: "idle" };
 
@@ -22,6 +23,7 @@ export function WelcomeWizard({
   initialPreferences: string;
   hasPreferences: boolean;
 }) {
+  const t = useT();
   const [step, setStep] = useState(1);
   const [prefsState, prefsAction, prefsPending] = useActionState(saveProfile, INITIAL);
 
@@ -30,32 +32,27 @@ export function WelcomeWizard({
   return (
     <div className="mt-8">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        Step {step} of 3
+        {t.welcome.step(step, 3)}
       </p>
 
       {step === 1 ? (
         <section className="mt-4">
-          <h2 className="font-heading text-xl font-semibold">
-            What makes or breaks a ride for you?
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your words go straight to the forecast generator, so be specific — temperatures, rain,
-            wind, darkness, whatever matters to you.
-          </p>
+          <h2 className="font-heading text-xl font-semibold">{t.welcome.prefsHeading}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.welcome.prefsHelp}</p>
           <form action={prefsAction} className="mt-4 flex flex-col gap-3">
             <Textarea
               name="preferences"
               rows={5}
               defaultValue={initialPreferences}
-              placeholder="I hate riding under 5 °C. Fine in light rain. Anything over 8 m/s headwind is a no."
+              placeholder={t.settings.prefsPlaceholder}
             />
             <div className="flex items-center gap-3">
               <Button type="submit" disabled={prefsPending}>
-                {prefsPending ? "Saving…" : "Save"}
+                {prefsPending ? t.welcome.saving : t.welcome.save}
               </Button>
               {prefsDone ? (
                 <Button type="button" variant="outline" onClick={() => setStep(2)}>
-                  Continue →
+                  {t.welcome.continue}
                 </Button>
               ) : (
                 <button
@@ -63,7 +60,7 @@ export function WelcomeWizard({
                   onClick={() => setStep(2)}
                   className="text-sm text-muted-foreground underline"
                 >
-                  Skip for now
+                  {t.welcome.skip}
                 </button>
               )}
               {prefsState.message && prefsState.status === "error" ? (
@@ -78,14 +75,12 @@ export function WelcomeWizard({
 
       {step === 2 ? (
         <section className="mt-4">
-          <h2 className="font-heading text-xl font-semibold">Get forecasts on this phone</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            The nightly forecast arrives as a notification — no need to open the app.
-          </p>
+          <h2 className="font-heading text-xl font-semibold">{t.welcome.pushHeading}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.welcome.pushHelp}</p>
           <PushToggle />
           <div className="mt-6 flex items-center gap-3">
             <Button type="button" onClick={() => setStep(3)}>
-              Continue →
+              {t.welcome.continue}
             </Button>
           </div>
         </section>
@@ -93,14 +88,12 @@ export function WelcomeWizard({
 
       {step === 3 ? (
         <section className="mt-4">
-          <h2 className="font-heading text-xl font-semibold">Your first ride</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            A recurring ride — like the commute — gets a fresh forecast every night before it.
-          </p>
+          <h2 className="font-heading text-xl font-semibold">{t.welcome.rideHeading}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.welcome.rideHelp}</p>
           <NewRideForm />
           <p className="mt-4 text-sm">
             <Link href="/dashboard" className="text-muted-foreground underline">
-              Skip for now
+              {t.welcome.skip}
             </Link>
           </p>
         </section>

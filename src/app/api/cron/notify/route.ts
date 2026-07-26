@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { dispatch, PushSubscriptionGoneError, type ChannelDestination } from "@/lib/notify";
 import { selectDueRides, type RideForCron } from "@/lib/cron/select-due";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/locale";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
     .eq("kind", "webpush");
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("user_id, preferences")
+    .select("user_id, preferences, locale")
     .in("user_id", userIds.length > 0 ? userIds : ["00000000-0000-0000-0000-000000000000"]);
 
   // One entry per subscribed device; malformed jsonb rows are skipped.
@@ -93,6 +94,12 @@ export async function GET(request: NextRequest) {
   }
   const prefsByUser = new Map<string, string>();
   for (const p of profiles ?? []) prefsByUser.set(p.user_id, p.preferences ?? "");
+  // The cron has no request context, so the rider's stored choice is the only
+  // signal for which language to write the verdict in.
+  const localeByUser = new Map<string, Locale>();
+  for (const p of profiles ?? []) {
+    localeByUser.set(p.user_id, isLocale(p.locale) ? p.locale : DEFAULT_LOCALE);
+  }
 
   const results: Array<{
     ride_id: string;
@@ -171,6 +178,7 @@ export async function GET(request: NextRequest) {
     try {
       const run = await runVerdict(rideForVerdict, {
         preferences: prefsByUser.get(cronRide.user_id) ?? "",
+        locale: localeByUser.get(cronRide.user_id) ?? DEFAULT_LOCALE,
         now,
       });
       const notification = {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { savePushSubscription, removePushSubscription } from "@/app/settings/actions";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n-provider";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -19,6 +20,7 @@ export function PushToggle({
   /** Render nothing once subscribed — for inline prompts outside Settings. */
   hideWhenSubscribed?: boolean;
 } = {}) {
+  const t = useT();
   const [state, setState] = useState<PushState>({ phase: "loading" });
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -32,10 +34,7 @@ export function PushToggle({
         const standalone = window.matchMedia("(display-mode: standalone)").matches;
         setState({
           phase: "unsupported",
-          reason:
-            isIos && !standalone
-              ? "On iPhone, notifications need the installed app: open this site in Safari, tap Share → Add to Home Screen, then enable notifications from that app."
-              : "Push notifications aren't supported in this browser.",
+          reason: isIos && !standalone ? t.push.iosHint : t.push.unsupported,
         });
         return;
       }
@@ -48,14 +47,14 @@ export function PushToggle({
         if (!cancelled) setState({ phase: subscription ? "subscribed" : "idle" });
       } catch {
         if (!cancelled) {
-          setState({ phase: "unsupported", reason: "Could not set up the notification worker." });
+          setState({ phase: "unsupported", reason: t.push.workerFailed });
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   async function enable() {
     if (!VAPID_PUBLIC_KEY) return;
@@ -67,7 +66,7 @@ export function PushToggle({
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setState({ phase: "idle" });
-        setMessage({ text: "Notification permission was not granted.", isError: true });
+        setMessage({ text: t.push.permissionDenied, isError: true });
         return;
       }
       const registration = await navigator.serviceWorker.ready;
@@ -94,7 +93,7 @@ export function PushToggle({
     } catch (err) {
       setState({ phase: "idle" });
       setMessage({
-        text: `Could not enable notifications: ${err instanceof Error ? err.message : String(err)}`,
+        text: t.push.enableFailed(err instanceof Error ? err.message : String(err)),
         isError: true,
       });
     }
@@ -115,21 +114,17 @@ export function PushToggle({
     } catch (err) {
       setState({ phase: "subscribed" });
       setMessage({
-        text: `Could not disable notifications: ${err instanceof Error ? err.message : String(err)}`,
+        text: t.push.disableFailed(err instanceof Error ? err.message : String(err)),
         isError: true,
       });
     }
   }
 
   if (!VAPID_PUBLIC_KEY) {
-    return (
-      <p className="mt-4 text-sm text-destructive">
-        Push is not configured: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.
-      </p>
-    );
+    return <p className="mt-4 text-sm text-destructive">{t.push.notConfigured}</p>;
   }
   if (state.phase === "loading") {
-    return <p className="mt-4 text-sm text-muted-foreground">Checking notification support…</p>;
+    return <p className="mt-4 text-sm text-muted-foreground">{t.push.checking}</p>;
   }
   if (state.phase === "unsupported") {
     return <p className="mt-4 text-sm text-muted-foreground">{state.reason}</p>;
@@ -144,11 +139,7 @@ export function PushToggle({
         onClick={subscribed ? disable : enable}
         disabled={state.phase === "working"}
       >
-        {state.phase === "working"
-          ? "Working…"
-          : subscribed
-            ? "Disable notifications on this device"
-            : "Enable notifications on this device"}
+        {state.phase === "working" ? t.push.working : subscribed ? t.push.disable : t.push.enable}
       </Button>
       {message ? (
         <span

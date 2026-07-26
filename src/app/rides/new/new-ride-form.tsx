@@ -6,21 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createRide, type CreateRideState } from "../actions";
 import { AddressField } from "./address-field";
+import { useT } from "@/components/i18n-provider";
 
 const INITIAL: CreateRideState = { status: "idle" };
 
-const DAYS = [
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
-  { value: 0, label: "Sun" },
-];
+/** Display order, Monday first; names come from the dictionary. */
+const DAY_VALUES = [1, 2, 3, 4, 5, 6, 0];
 const DEFAULT_DAYS = [1, 2, 3, 4, 5];
 
 export function NewRideForm() {
+  const t = useT();
   const [state, formAction, pending] = useActionState(createRide, INITIAL);
   const [timezone, setTimezone] = useState("");
   const [roundTrip, setRoundTrip] = useState(false);
@@ -41,34 +36,34 @@ export function NewRideForm() {
     <form action={formAction} className="mt-6 flex flex-col gap-4">
       <input type="hidden" name="timezone" value={timezone} />
 
-      <Field label="Label" htmlFor="label">
+      <Field label={t.ride.label} htmlFor="label">
         <Input
           id="label"
           name="label"
           type="text"
           required
           defaultValue={v.label ?? ""}
-          placeholder="Morning commute"
+          placeholder={t.ride.labelPlaceholder}
         />
       </Field>
 
       <AddressField
         id="start_address"
         name="start_address"
-        label="Starting point"
-        placeholder="Datavägen 9, Järfälla"
+        label={t.ride.start}
+        placeholder={t.ride.startPlaceholder}
         defaultValue={v.start_address ?? ""}
       />
 
       <AddressField
         id="end_address"
         name="end_address"
-        label="Destination"
-        placeholder="Storgatan 1, Stockholm"
+        label={t.ride.end}
+        placeholder={t.ride.endPlaceholder}
         defaultValue={v.end_address ?? ""}
       />
 
-      <Field label="Depart time" htmlFor="depart_local_time">
+      <Field label={t.ride.departTime} htmlFor="depart_local_time">
         <Input
           id="depart_local_time"
           name="depart_local_time"
@@ -86,11 +81,11 @@ export function NewRideForm() {
           onChange={(e) => setRoundTrip(e.target.checked)}
           className="h-4 w-4"
         />
-        Round trip
+        {t.ride.roundTrip}
       </label>
 
       {roundTrip ? (
-        <Field label="Return time" htmlFor="return_local_time">
+        <Field label={t.ride.returnTime} htmlFor="return_local_time">
           <Input
             id="return_local_time"
             name="return_local_time"
@@ -102,28 +97,28 @@ export function NewRideForm() {
       ) : null}
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">Days of week</legend>
+        <legend className="text-sm font-medium">{t.ride.daysOfWeek}</legend>
         <div className="flex flex-wrap gap-2">
-          {DAYS.map((d) => (
+          {DAY_VALUES.map((value) => (
             <label
-              key={d.value}
+              key={value}
               className="flex cursor-pointer items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors has-checked:border-primary has-checked:bg-primary/10 has-checked:font-medium has-checked:text-primary has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
             >
               <input
                 type="checkbox"
                 name="days_of_week"
-                value={d.value}
-                defaultChecked={days.includes(d.value)}
+                value={value}
+                defaultChecked={days.includes(value)}
                 className="sr-only"
               />
-              {d.label}
+              {t.days.short[value]}
             </label>
           ))}
         </div>
       </fieldset>
 
       <Button type="submit" disabled={pending} className="mt-2">
-        {pending ? "Saving…" : "Save ride"}
+        {pending ? t.ride.creating : t.ride.create}
       </Button>
 
       {state.message ? (

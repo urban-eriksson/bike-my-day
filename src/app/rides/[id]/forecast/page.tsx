@@ -2,10 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { SnapshotDetails, Verdict } from "@/components/forecast";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+import { getT } from "@/lib/i18n/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { WeatherSnapshot } from "@/lib/weather/types";
 
-export const metadata = { title: "Forecast — bike my day" };
+export async function generateMetadata() {
+  return { title: (await getT()).meta.forecast };
+}
 export const dynamic = "force-dynamic";
 
 /**
@@ -15,6 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function ForecastPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const t = await getT();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -30,8 +35,8 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
 
   if (!ride) {
     return (
-      <Frame>
-        <p className="mt-6 text-sm text-destructive">Ride not found.</p>
+      <Frame t={t}>
+        <p className="mt-6 text-sm text-destructive">{t.forecast.notFound}.</p>
       </Frame>
     );
   }
@@ -46,7 +51,7 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
     .maybeSingle();
 
   return (
-    <Frame>
+    <Frame t={t}>
       <p className="mt-1 text-[0.95rem] text-muted-foreground">
         <span className="font-medium text-foreground">{ride.label}</span> · {ride.start_address} →{" "}
         {ride.end_address}
@@ -54,17 +59,20 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
 
       {notification?.verdict_text ? (
         <div className="mt-6">
-          <Verdict score={notification.score} text={notification.verdict_text} />
-          <SnapshotDetails snapshot={notification.forecast_json as unknown as WeatherSnapshot} />
+          <Verdict score={notification.score} text={notification.verdict_text} t={t} />
+          <SnapshotDetails
+            snapshot={notification.forecast_json as unknown as WeatherSnapshot}
+            t={t}
+          />
         </div>
       ) : (
         <p className="mt-6 text-[0.95rem] text-muted-foreground">
-          No forecast for this ride yet — it arrives with the evening notification.{" "}
+          {t.forecast.none}{" "}
           <Link
             href={`/rides/${ride.id}/preview`}
             className="font-medium text-primary underline underline-offset-2"
           >
-            Generate one now
+            {t.forecast.generateNow}
           </Link>
           .
         </p>
@@ -73,12 +81,12 @@ export default async function ForecastPage({ params }: { params: Promise<{ id: s
   );
 }
 
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({ children, t }: { children: React.ReactNode; t: Dictionary }) {
   return (
     <>
       <AppHeader back />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6">
-        <h1 className="font-heading text-2xl font-semibold">Forecast</h1>
+        <h1 className="font-heading text-2xl font-semibold">{t.forecast.title}</h1>
         {children}
       </main>
     </>
