@@ -26,7 +26,10 @@ export function PushButton(props: PushButtonPayload & { label: string; sendingLa
   const [state, formAction, pending] = useActionState(pushVerdict, INITIAL);
 
   return (
-    <form action={formAction} className="flex items-center gap-3">
+    <form
+      action={formAction}
+      className="flex flex-col items-start gap-3 sm:flex-row sm:items-center"
+    >
       <input type="hidden" name="ride_id" value={props.rideId} />
       <input type="hidden" name="ride_label" value={props.rideLabel} />
       <input type="hidden" name="verdict_text" value={props.verdictText} />

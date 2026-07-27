@@ -127,13 +127,13 @@ export function PushToggle({
     return <p className="mt-4 text-sm text-muted-foreground">{t.push.checking}</p>;
   }
   if (state.phase === "unsupported") {
-    return <p className="mt-4 text-sm text-muted-foreground">{state.reason}</p>;
+    return <p className="mt-4 max-w-prose text-sm text-muted-foreground">{state.reason}</p>;
   }
 
   const subscribed = state.phase === "subscribed";
   if (hideWhenSubscribed && subscribed && !message) return null;
   return (
-    <div className="mt-4 flex items-center gap-3">
+    <div className="mt-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
       <Button
         type="button"
         onClick={subscribed ? disable : enable}
