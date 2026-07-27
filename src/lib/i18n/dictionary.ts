@@ -145,7 +145,7 @@ const en = {
   },
   home: {
     tagline:
-      "Wake up knowing whether today's ride is worth it — sun, rain and wind direction along your route, in one plain sentence.",
+      "Wake up knowing whether today's ride is worth it — sun, rain and wind direction along your route, in a sentence or two.",
     signIn: "Sign in",
     dashboard: "Your rides",
     installHeading: "Put it on your phone",
@@ -318,7 +318,7 @@ const sv: Dictionary = {
   },
   home: {
     tagline:
-      "Vakna med besked om dagens cykeltur är värd att ta — sol, regn och vindriktning längs vägen, i en enda mening.",
+      "Vakna och få reda på om dagens cykeltur är värd att ta — sol, regn och vindriktning längs vägen, i ett enda meddelande.",
     signIn: "Logga in",
     dashboard: "Dina rutter",
     installHeading: "Lägg den på telefonen",

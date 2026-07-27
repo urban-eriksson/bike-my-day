@@ -1,12 +1,16 @@
 import { nextOccurrence } from "@/lib/rides/next-occurrence";
 
 /**
- * How many hours ahead the cron looks for upcoming rides. Vercel's free plan
- * caps cron frequency at once per day, so we run a single daily tick (08:00
- * UTC by default — see vercel.json) and dispatch verdicts for every ride
- * whose next occurrence falls in the next 24 hours. With the cron firing at
- * the same wall-clock time every day, each (ride, occurrence) pair lands in
- * exactly one tick's window.
+ * How many hours ahead the cron looks for upcoming rides. Vercel's Hobby plan
+ * caps cron frequency at once per day, so we run a single daily tick (02:00
+ * UTC — see vercel.json) and dispatch verdicts for every ride whose next
+ * occurrence falls in the next 24 hours. With the cron firing at the same
+ * wall-clock time every day, each (ride, occurrence) pair lands in exactly
+ * one tick's window.
+ *
+ * This window is also what would give per-rider timing on a paid plan: tick
+ * more often and shrink the lookahead to match, rather than adding a cron
+ * per rider.
  */
 export const DEFAULT_LOOKAHEAD_HOURS = 24;
 
