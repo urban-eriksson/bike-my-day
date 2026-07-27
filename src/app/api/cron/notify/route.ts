@@ -52,7 +52,9 @@ function ride(
  *      notifications row. The notifications.unique(ride_id, scheduled_for)
  *      constraint guarantees idempotency on retries / overlapping ticks.
  */
-export const maxDuration = 60;
+// Hobby allows 300s (the platform default) — the earlier 60s was a guess and
+// cost 5x the batch capacity for nothing.
+export const maxDuration = 300;
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
