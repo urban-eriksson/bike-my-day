@@ -1,10 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { dispatch, PushSubscriptionGoneError, type ChannelDestination } from "@/lib/notify";
 import { selectDueRides, type RideForCron } from "@/lib/cron/select-due";
+import { mapWithConcurrency } from "@/lib/cron/concurrency";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/locale";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
+
+/**
+ * Each ride costs a weather fetch plus an LLM call — seconds apiece. Run them
+ * with a small pool rather than one at a time: serial work meant the function
+ * timed out once enough riders were due, and everyone past the cut-off
+ * silently got nothing. The cap keeps us from stampeding Open-Meteo and
+ * Anthropic when the pool is large.
+ */
+const CONCURRENCY = 5;
+
+type RideResult = {
+  ride_id: string;
+  user_id: string;
+  scheduled_for: string;
+  status: "sent" | "skipped" | "error" | "dry_run";
+  detail?: string;
+};
+
+function ride(
+  cronRide: RideForCron,
+  scheduledFor: Date,
+  status: RideResult["status"],
+  detail: string,
+): RideResult {
+  return {
+    ride_id: cronRide.id,
+    user_id: cronRide.user_id,
+    scheduled_for: scheduledFor.toISOString(),
+    status,
+    detail,
+  };
+}
 
 /**
  * Daily cron entrypoint. Vercel sends `Authorization: Bearer ${CRON_SECRET}`
@@ -13,11 +46,14 @@ import type { Json } from "@/lib/supabase/database.types";
  * Flow per tick:
  *   1. Find every active ride whose next occurrence is in the lead window.
  *   2. For each, look up the rider's push subscriptions + preferences.
- *   3. Run the verdict pipeline once, push it to every subscribed device
+ *   3. Run the verdict pipeline once per ride (up to CONCURRENCY at a
+ *      time), push it to every subscribed device
  *      (pruning subscriptions the push service reports dead), persist a
  *      notifications row. The notifications.unique(ride_id, scheduled_for)
  *      constraint guarantees idempotency on retries / overlapping ticks.
  */
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
   if (!process.env.CRON_SECRET) {
@@ -101,168 +137,131 @@ export async function GET(request: NextRequest) {
     localeByUser.set(p.user_id, isLocale(p.locale) ? p.locale : DEFAULT_LOCALE);
   }
 
-  const results: Array<{
-    ride_id: string;
-    user_id: string;
-    scheduled_for: string;
-    status: "sent" | "skipped" | "error" | "dry_run";
-    detail?: string;
-  }> = [];
+  const results = await mapWithConcurrency(
+    due,
+    CONCURRENCY,
+    async ({ ride: cronRide, scheduledFor }) => {
+      const fullRide = (cronRide as RideForCron & { fullRide: (typeof rides)[number] }).fullRide;
+      if (fullRide.muted) {
+        return ride(cronRide, scheduledFor, "skipped", "muted");
+      }
+      const devices = channelsByUser.get(cronRide.user_id) ?? [];
+      if (devices.length === 0) {
+        return ride(cronRide, scheduledFor, "skipped", "no push subscription");
+      }
 
-  for (const { ride: cronRide, scheduledFor } of due) {
-    const fullRide = (cronRide as RideForCron & { fullRide: (typeof rides)[number] }).fullRide;
-    if (fullRide.muted) {
-      results.push({
-        ride_id: cronRide.id,
-        user_id: cronRide.user_id,
-        scheduled_for: scheduledFor.toISOString(),
-        status: "skipped",
-        detail: "muted",
-      });
-      continue;
-    }
-    const devices = channelsByUser.get(cronRide.user_id) ?? [];
-    if (devices.length === 0) {
-      results.push({
-        ride_id: cronRide.id,
-        user_id: cronRide.user_id,
-        scheduled_for: scheduledFor.toISOString(),
-        status: "skipped",
-        detail: "no push subscription",
-      });
-      continue;
-    }
+      // Idempotency: short-circuit if a notifications row already exists.
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("id, sent_at")
+        .eq("ride_id", cronRide.id)
+        .eq("scheduled_for", scheduledFor.toISOString())
+        .maybeSingle();
+      if (existing?.sent_at) {
+        return ride(cronRide, scheduledFor, "skipped", "already sent");
+      }
 
-    // Idempotency: short-circuit if a notifications row already exists.
-    const { data: existing } = await supabase
-      .from("notifications")
-      .select("id, sent_at")
-      .eq("ride_id", cronRide.id)
-      .eq("scheduled_for", scheduledFor.toISOString())
-      .maybeSingle();
-    if (existing?.sent_at) {
-      results.push({
-        ride_id: cronRide.id,
-        user_id: cronRide.user_id,
-        scheduled_for: scheduledFor.toISOString(),
-        status: "skipped",
-        detail: "already sent",
-      });
-      continue;
-    }
-
-    const rideForVerdict: RideForVerdict = {
-      id: fullRide.id,
-      label: fullRide.label,
-      start_lat: Number(fullRide.start_lat),
-      start_lon: Number(fullRide.start_lon),
-      end_lat: Number(fullRide.end_lat),
-      end_lon: Number(fullRide.end_lon),
-      depart_local_time: cronRide.depart_local_time,
-      return_local_time: fullRide.return_local_time ? String(fullRide.return_local_time) : null,
-      days_of_week: cronRide.days_of_week,
-      timezone: cronRide.timezone,
-    };
-
-    if (dryRun) {
-      results.push({
-        ride_id: cronRide.id,
-        user_id: cronRide.user_id,
-        scheduled_for: scheduledFor.toISOString(),
-        status: "dry_run",
-        detail: `would push to ${devices.length} device(s)`,
-      });
-      continue;
-    }
-
-    try {
-      const run = await runVerdict(rideForVerdict, {
-        preferences: prefsByUser.get(cronRide.user_id) ?? "",
-        locale: localeByUser.get(cronRide.user_id) ?? DEFAULT_LOCALE,
-        now,
-      });
-      const notification = {
-        rideLabel: fullRide.label,
-        whenLocal: run.snapshot.as_of_local,
-        verdictText: run.text,
-        score: run.score,
-        url: `/rides/${cronRide.id}/forecast`,
-        details: {
-          temperatureC: run.snapshot.temperature_c,
-          apparentTemperatureC: run.snapshot.apparent_temperature_c,
-          precipitationMm: run.snapshot.precipitation_mm,
-          windSpeedMs: run.snapshot.wind_speed_ms,
-          windGustsMs: run.snapshot.wind_gusts_ms,
-        },
+      const rideForVerdict: RideForVerdict = {
+        id: fullRide.id,
+        label: fullRide.label,
+        start_lat: Number(fullRide.start_lat),
+        start_lon: Number(fullRide.start_lon),
+        end_lat: Number(fullRide.end_lat),
+        end_lon: Number(fullRide.end_lon),
+        depart_local_time: cronRide.depart_local_time,
+        return_local_time: fullRide.return_local_time ? String(fullRide.return_local_time) : null,
+        days_of_week: cronRide.days_of_week,
+        timezone: cronRide.timezone,
       };
 
-      // One verdict, pushed to every device. Dead subscriptions (404/410 from
-      // the push service) are pruned so they stop consuming send attempts.
-      let firstSentChannelId: string | null = null;
-      let pruned = 0;
-      const failures: string[] = [];
-      for (const device of devices) {
-        try {
-          await dispatch(notification, device.destination);
-          firstSentChannelId ??= device.id;
-        } catch (err) {
-          if (err instanceof PushSubscriptionGoneError) {
-            await supabase.from("notification_channels").delete().eq("id", device.id);
-            pruned += 1;
-          } else {
-            failures.push(err instanceof Error ? err.message : String(err));
+      if (dryRun) {
+        return ride(cronRide, scheduledFor, "dry_run", `would push to ${devices.length} device(s)`);
+      }
+
+      try {
+        const run = await runVerdict(rideForVerdict, {
+          preferences: prefsByUser.get(cronRide.user_id) ?? "",
+          locale: localeByUser.get(cronRide.user_id) ?? DEFAULT_LOCALE,
+          now,
+        });
+        const notification = {
+          rideLabel: fullRide.label,
+          whenLocal: run.snapshot.as_of_local,
+          verdictText: run.text,
+          score: run.score,
+          url: `/rides/${cronRide.id}/forecast`,
+          details: {
+            temperatureC: run.snapshot.temperature_c,
+            apparentTemperatureC: run.snapshot.apparent_temperature_c,
+            precipitationMm: run.snapshot.precipitation_mm,
+            windSpeedMs: run.snapshot.wind_speed_ms,
+            windGustsMs: run.snapshot.wind_gusts_ms,
+          },
+        };
+
+        // One verdict, pushed to every device. Dead subscriptions (404/410 from
+        // the push service) are pruned so they stop consuming send attempts.
+        let firstSentChannelId: string | null = null;
+        let pruned = 0;
+        const failures: string[] = [];
+        for (const device of devices) {
+          try {
+            await dispatch(notification, device.destination);
+            firstSentChannelId ??= device.id;
+          } catch (err) {
+            if (err instanceof PushSubscriptionGoneError) {
+              await supabase.from("notification_channels").delete().eq("id", device.id);
+              pruned += 1;
+            } else {
+              failures.push(err instanceof Error ? err.message : String(err));
+            }
           }
         }
-      }
-      const sentCount = devices.length - pruned - failures.length;
-      const prunedSuffix = pruned > 0 ? `, pruned ${pruned} expired` : "";
+        const sentCount = devices.length - pruned - failures.length;
+        const prunedSuffix = pruned > 0 ? `, pruned ${pruned} expired` : "";
 
-      if (sentCount === 0) {
-        results.push({
-          ride_id: cronRide.id,
-          user_id: cronRide.user_id,
-          scheduled_for: scheduledFor.toISOString(),
+        if (sentCount === 0) {
           // All-expired is a user state (nothing to retry); any hard failure
           // leaves sent_at unset so the next tick retries.
-          status: failures.length === 0 ? "skipped" : "error",
-          detail:
+          return ride(
+            cronRide,
+            scheduledFor,
+            failures.length === 0 ? "skipped" : "error",
             failures.length === 0
               ? "all subscriptions expired"
               : `push failed for all devices: ${failures[0]}${prunedSuffix}`,
-        });
-        continue;
-      }
+          );
+        }
 
-      await supabase.from("notifications").upsert(
-        {
-          user_id: cronRide.user_id,
-          ride_id: cronRide.id,
-          channel_id: firstSentChannelId,
-          scheduled_for: scheduledFor.toISOString(),
-          forecast_json: run.snapshot as unknown as Json,
-          verdict_text: run.text,
-          score: run.score,
-          sent_at: new Date().toISOString(),
-        },
-        { onConflict: "ride_id,scheduled_for" },
-      );
-      results.push({
-        ride_id: cronRide.id,
-        user_id: cronRide.user_id,
-        scheduled_for: scheduledFor.toISOString(),
-        status: "sent",
-        detail: `pushed to ${sentCount}/${devices.length} device(s)${prunedSuffix}`,
-      });
-    } catch (err) {
-      results.push({
-        ride_id: cronRide.id,
-        user_id: cronRide.user_id,
-        scheduled_for: scheduledFor.toISOString(),
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
+        await supabase.from("notifications").upsert(
+          {
+            user_id: cronRide.user_id,
+            ride_id: cronRide.id,
+            channel_id: firstSentChannelId,
+            scheduled_for: scheduledFor.toISOString(),
+            forecast_json: run.snapshot as unknown as Json,
+            verdict_text: run.text,
+            score: run.score,
+            sent_at: new Date().toISOString(),
+          },
+          { onConflict: "ride_id,scheduled_for" },
+        );
+        return ride(
+          cronRide,
+          scheduledFor,
+          "sent",
+          `pushed to ${sentCount}/${devices.length} device(s)${prunedSuffix}`,
+        );
+      } catch (err) {
+        return ride(
+          cronRide,
+          scheduledFor,
+          "error",
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    },
+  );
 
   return NextResponse.json({
     now: now.toISOString(),
