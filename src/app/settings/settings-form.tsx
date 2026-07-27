@@ -20,7 +20,7 @@ export function SettingsForm({ initialPreferences }: { initialPreferences: strin
         defaultValue={initialPreferences}
         placeholder={t.settings.prefsPlaceholder}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
         <Button type="submit" disabled={pending}>
           {pending ? t.ride.saving : t.settings.savePrefs}
         </Button>
