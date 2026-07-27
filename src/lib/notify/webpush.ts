@@ -44,6 +44,9 @@ export type PushPayload = {
 /** A verdict is stale once the ride window has passed. */
 const TTL_SECONDS = 60 * 60 * 12;
 
+/** An operational alert is only useful while it is still actionable. */
+const ALERT_TTL_SECONDS = 60 * 60 * 6;
+
 export function createWebPushChannel(options: WebPushChannelOptions = {}): Channel {
   const client = options.client ?? createDefaultClient(options.vapid);
 
@@ -57,26 +60,49 @@ export function createWebPushChannel(options: WebPushChannelOptions = {}): Chann
         throw new Error(`Webpush channel can't dispatch to ${dest.kind}`);
       }
 
-      const payload = renderPushPayload(notification);
-      try {
-        await client.sendNotification(
-          { endpoint: dest.endpoint, keys: dest.keys },
-          JSON.stringify(payload),
-          { TTL: TTL_SECONDS },
-        );
-      } catch (err) {
-        const statusCode = (err as { statusCode?: unknown })?.statusCode;
-        if (statusCode === 404 || statusCode === 410) {
-          throw new PushSubscriptionGoneError(statusCode, dest.endpoint);
-        }
-        throw new Error(
-          `Web push send failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
+      await deliver(client, renderPushPayload(notification), dest, TTL_SECONDS);
       // Push services return no useful message id.
       return {};
     },
   };
+}
+
+/** Shared send + error translation for every payload kind. */
+async function deliver(
+  client: WebPushClient,
+  payload: PushPayload,
+  dest: Extract<ChannelDestination, { kind: "webpush" }>,
+  ttlSeconds: number,
+): Promise<void> {
+  try {
+    await client.sendNotification(
+      { endpoint: dest.endpoint, keys: dest.keys },
+      JSON.stringify(payload),
+      { TTL: ttlSeconds },
+    );
+  } catch (err) {
+    const statusCode = (err as { statusCode?: unknown })?.statusCode;
+    if (statusCode === 404 || statusCode === 410) {
+      throw new PushSubscriptionGoneError(statusCode, dest.endpoint);
+    }
+    throw new Error(`Web push send failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Sends an already-rendered payload, bypassing verdict rendering. Operational
+ * alerts to the operator are not ride verdicts — pushing one through
+ * VerdictNotification would title it with a star rating it doesn't have.
+ *
+ * Short TTL: a capacity warning that arrives a day late is noise.
+ */
+export async function sendPushPayload(
+  payload: PushPayload,
+  dest: Extract<ChannelDestination, { kind: "webpush" }>,
+  options: WebPushChannelOptions = {},
+): Promise<void> {
+  const client = options.client ?? createDefaultClient(options.vapid);
+  await deliver(client, payload, dest, ALERT_TTL_SECONDS);
 }
 
 function createDefaultClient(vapid?: WebPushChannelOptions["vapid"]): WebPushClient {
