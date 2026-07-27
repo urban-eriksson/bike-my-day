@@ -1,8 +1,8 @@
-import { createWebPushChannel, PushSubscriptionGoneError } from "./webpush";
+import { createWebPushChannel } from "./webpush";
 import type { Channel, ChannelDestination, DispatchResult, VerdictNotification } from "./types";
 
 export type { Channel, ChannelDestination, DispatchResult, VerdictNotification } from "./types";
-export { PushSubscriptionGoneError };
+export { PushSubscriptionGoneError, sendPushPayload, type PushPayload } from "./webpush";
 
 /**
  * Singleton registry. As we add native push, register it here so the

@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { dispatch, PushSubscriptionGoneError, type ChannelDestination } from "@/lib/notify";
+import {
+  dispatch,
+  PushSubscriptionGoneError,
+  sendPushPayload,
+  type ChannelDestination,
+} from "@/lib/notify";
 import { selectDueRides, type RideForCron } from "@/lib/cron/select-due";
 import { mapWithConcurrency } from "@/lib/cron/concurrency";
+import { describeCapacity, measureCapacity } from "@/lib/cron/capacity";
 import { runVerdict, type RideForVerdict } from "@/lib/rides/run-verdict";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/locale";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -65,6 +71,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const startedAt = Date.now();
   const dryRun = request.nextUrl.searchParams.get("dry_run") === "true";
   const now = new Date();
   const supabase = createSupabaseAdminClient();
@@ -74,7 +81,10 @@ export async function GET(request: NextRequest) {
     .select(
       "id, user_id, label, start_lat, start_lon, end_lat, end_lon, depart_local_time, return_local_time, days_of_week, timezone, muted",
     )
-    .eq("active", true);
+    .eq("active", true)
+    // Oldest first. If a batch ever outgrows its budget, the run is cut short
+    // at the newest rides rather than at an arbitrary set of them.
+    .order("created_at", { ascending: true });
   if (ridesError) {
     return NextResponse.json({ error: ridesError.message }, { status: 500 });
   }
@@ -265,10 +275,84 @@ export async function GET(request: NextRequest) {
     },
   );
 
+  // A dry run skips the weather fetch and the LLM call, so its wall-clock says
+  // nothing about real capacity — reporting a headroom figure from it would be
+  // a number that lies. Selection is what a dry run is for.
+  const capacity = dryRun
+    ? null
+    : measureCapacity(Date.now() - startedAt, maxDuration * 1000, due.length);
+  if (capacity?.shouldWarn) {
+    await warnOperator(supabase, capacity, due.length);
+  }
+
   return NextResponse.json({
     now: now.toISOString(),
     candidates: rides?.length ?? 0,
     due: due.length,
+    capacity,
     results,
   });
+}
+
+/**
+ * Pushes a capacity warning to the operator's own devices.
+ *
+ * Identified by ADMIN_EMAIL rather than a user id: deleting and re-creating
+ * the account (which is how the operator resets during testing) mints a new
+ * id but keeps the address. Unset means no alerting — the capacity numbers
+ * are still in the response either way, so this degrades to silence, never
+ * to a failed run.
+ */
+async function warnOperator(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  capacity: ReturnType<typeof measureCapacity>,
+  ridesProcessed: number,
+): Promise<void> {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!email) return;
+
+  try {
+    // Bounded scan: the operator is the first user, so this exits on page one
+    // in practice. The cap keeps a large user table from stalling the run.
+    let userId: string | null = null;
+    for (let page = 1; page <= 5 && !userId; page += 1) {
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+      if (error || !data.users.length) break;
+      userId = data.users.find((u) => u.email?.toLowerCase() === email)?.id ?? null;
+      if (data.users.length < 200) break;
+    }
+    if (!userId) return;
+
+    const { data: channels } = await supabase
+      .from("notification_channels")
+      .select("destination")
+      .eq("user_id", userId)
+      .eq("kind", "webpush");
+
+    const payload = {
+      title: `bike my day — ${capacity.usedPct}% of the nightly budget`,
+      body: describeCapacity(capacity, ridesProcessed),
+      url: "/dashboard",
+    };
+
+    for (const c of channels ?? []) {
+      const dest = c.destination as { endpoint?: unknown; keys?: Record<string, unknown> };
+      if (
+        typeof dest?.endpoint !== "string" ||
+        typeof dest.keys?.p256dh !== "string" ||
+        typeof dest.keys?.auth !== "string"
+      ) {
+        continue;
+      }
+      await sendPushPayload(payload, {
+        kind: "webpush",
+        endpoint: dest.endpoint,
+        keys: { p256dh: dest.keys.p256dh, auth: dest.keys.auth },
+      }).catch(() => {
+        // A failed warning must never fail the run that produced it.
+      });
+    }
+  } catch {
+    // Same reasoning: alerting is best-effort.
+  }
 }
