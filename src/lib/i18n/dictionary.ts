@@ -55,7 +55,7 @@ const en = {
     saving: "Saving…",
     delete: "Delete ride",
     deleteTitle: (label: string) => `Delete “${label}”?`,
-    deleteBody: "Its forecasts stop tonight. There is no undo.",
+    deleteBody: "You will get no more forecasts for it. There is no undo.",
     newTitle: "New ride",
     newHelp:
       "Start typing an address or place and pick a suggestion — that pins the exact spot the forecast is fetched for.",
@@ -228,7 +228,7 @@ const sv: Dictionary = {
     saving: "Sparar…",
     delete: "Radera rutt",
     deleteTitle: (label: string) => `Radera ”${label}”?`,
-    deleteBody: "Prognoserna slutar komma automatiskt. Det går inte att ångra.",
+    deleteBody: "Du får inga fler prognoser för den. Det går inte att ångra.",
     newTitle: "Ny rutt",
     newHelp:
       "Börja skriva en adress eller plats och välj ett förslag — det bestämmer den punkt prognosen hämtas för.",
@@ -318,7 +318,7 @@ const sv: Dictionary = {
   },
   home: {
     tagline:
-      "En uppdatering om dagens cykeltur är precis vad man vill ha — sol, regn och vindriktning längs vägen, samlat i ett enda meddelande.",
+      "Vakna med besked om dagens cykeltur är värd att ta — sol, regn och vindriktning längs vägen, i en enda mening.",
     signIn: "Logga in",
     dashboard: "Dina rutter",
     installHeading: "Lägg den på telefonen",
