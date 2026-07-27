@@ -29,7 +29,7 @@ const en = {
   },
   dashboard: {
     heading: "Your rides",
-    empty: "No rides yet — add one and tomorrow's forecast finds you.",
+    empty: "No rides yet — add one and the forecast is waiting when you wake up.",
     addRide: "Add a ride",
     newRide: "New ride",
     forecast: "Forecast",
@@ -67,7 +67,7 @@ const en = {
     loading: "Checking the weather and making the call…",
     notFound: "Ride not found",
     failed: (message: string) => `Could not generate forecast: ${message}`,
-    none: "No forecast for this ride yet — it arrives with the evening notification.",
+    none: "No forecast for this ride yet — the next one arrives overnight.",
     generateNow: "Generate one now",
     stars: (n: number) => `${n} of 5 stars`,
     when: "When",
@@ -128,7 +128,7 @@ const en = {
   },
   welcome: {
     title: "Welcome to bike my day",
-    subtitle: "Three quick steps and tomorrow's ride forecast lands on your phone by itself.",
+    subtitle: "Three quick steps, and the forecast is on your phone before you wake up.",
     step: (n: number, total: number) => `Step ${n} of ${total}`,
     prefsHeading: "What makes or breaks a ride for you?",
     prefsHelp:
@@ -138,13 +138,14 @@ const en = {
     continue: "Continue →",
     skip: "Skip for now",
     pushHeading: "Get forecasts on this phone",
-    pushHelp: "The nightly forecast arrives as a notification — no need to open the app.",
+    pushHelp: "The forecast arrives overnight as a notification — no need to open the app.",
     rideHeading: "Your first ride",
-    rideHelp: "A recurring ride — like the commute — gets a fresh forecast every night before it.",
+    rideHelp:
+      "A recurring ride — like the commute — gets a fresh forecast overnight, ready for the morning.",
   },
   home: {
     tagline:
-      "A nightly heads-up on whether tomorrow's ride is worth doing — sun, rain, wind direction along your route, all turned into one plain sentence.",
+      "Wake up knowing whether today's ride is worth it — sun, rain and wind direction along your route, in one plain sentence.",
     signIn: "Sign in",
     dashboard: "Your rides",
     installHeading: "Put it on your phone",
@@ -201,7 +202,7 @@ const sv: Dictionary = {
   },
   dashboard: {
     heading: "Dina rutter",
-    empty: "Inga rutter än — lägg till en så kommer morgondagens prognos automatiskt under natten.",
+    empty: "Inga rutter än — lägg till en så finns prognosen där när du vaknar.",
     addRide: "Lägg till en rutt",
     newRide: "Ny rutt",
     forecast: "Prognos",
@@ -300,7 +301,7 @@ const sv: Dictionary = {
   },
   welcome: {
     title: "Välkommen till bike my day",
-    subtitle: "Tre snabba steg, sedan kommer morgondagens cykelprognos i telefonen av sig själv.",
+    subtitle: "Tre snabba steg, sedan finns cykelprognosen i telefonen när du vaknar.",
     step: (n: number, total: number) => `Steg ${n} av ${total}`,
     prefsHeading: "Vad gör en cykeltur bra för dig? Eller dålig?",
     prefsHelp:
@@ -310,7 +311,7 @@ const sv: Dictionary = {
     continue: "Fortsätt →",
     skip: "Hoppa över",
     pushHeading: "Få prognoser i den här telefonen",
-    pushHelp: "Morgondagens prognos kommer som en notis. Du behöver inte öppna appen.",
+    pushHelp: "Prognosen kommer som en notis under natten. Den finns där när du tar upp telefonen.",
     rideHeading: "Din första rutt",
     rideHelp:
       "För en återkommande cykeltur, som jobbpendlingen, får du en färsk prognos varje morgon.",
