@@ -115,12 +115,21 @@ EOF
 # the origin name gets one too, so the whole path can be proven before the
 # production name moves. Both are proxied to the same process.
 if ! grep -q "^$DOMAIN" /etc/caddy/Caddyfile; then
+  # This is the one step here that can take the neighbours down with it: they
+  # share this Caddy. Keep a copy, validate before reloading, and put the old
+  # file back untouched if the new one does not parse.
+  cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak
   cat >> /etc/caddy/Caddyfile <<EOF
 
 $DOMAIN, $ORIGIN_DOMAIN {
     reverse_proxy 127.0.0.1:$PORT
 }
 EOF
+  if ! caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile; then
+    mv /etc/caddy/Caddyfile.bak /etc/caddy/Caddyfile
+    echo "Caddyfile did not validate; left untouched and did not reload" >&2
+    exit 1
+  fi
   systemctl reload caddy
 fi
 
