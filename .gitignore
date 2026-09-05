@@ -38,6 +38,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cdk (per-developer venv and synthesised templates)
+infra/.venv
+infra/cdk.out
+
 # playwright
 /playwright-report
 /test-results
