@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Deployed to a shared t3.micro, so the artifact has to be small and the box
+  // must never run `next build` (it wants ~1 GB and would OOM the neighbours).
+  // Standalone traces only what is actually imported: 49 MB instead of the
+  // 831 MB node_modules. Vercel ignores this setting, so it is safe either way.
+  output: "standalone",
   experimental: {
     // Every page here is dynamic, and since Next 15 the client cache for
     // dynamic segments defaults to 0s — so going back re-ran auth and the
