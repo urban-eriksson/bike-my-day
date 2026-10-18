@@ -6,9 +6,9 @@ server-rendered and carries an auth cookie, so there is nothing worth caching
 at an edge and a cache-policy mistake would serve one rider's dashboard to
 another. TLS is Caddy's job, via Let's Encrypt, on the box itself.
 
-The box belongs to the Snicksnack stack. This stack only adds a deploy bucket
-its instance role may read, plus DNS, and reads the instance id, Elastic IP and
-role name out of the Snicksnack stack at synth time.
+The box belongs to the KoristDev stack (repo korist-infra). This stack only adds
+a deploy bucket its instance role may read, plus DNS, and reads the instance id,
+Elastic IP and role name out of the KoristDev stack at synth time.
 
 Runtime secrets are NOT here: CloudFormation cannot create SecureStrings, and a
 plaintext parameter in a template is a plaintext parameter in the deploy logs.
@@ -39,7 +39,7 @@ DOMAIN = "bike-my-day.korist.se"
 # end to end before the name riders actually use is pointed anywhere new, and
 # stays reachable afterwards when the production name is misbehaving.
 ORIGIN_DOMAIN = "origin.bike-my-day.korist.se"
-SERVER_STACK = "Snicksnack"
+SERVER_STACK = "KoristDev"  # the dev box, owned by korist-infra
 
 
 def server_facts() -> dict[str, str]:
@@ -84,7 +84,10 @@ class BikeMyDayStack(Stack):
                 s3.LifecycleRule(noncurrent_version_expiration=cdk.Duration.days(14))
             ],
         )
-        role = iam.Role.from_role_name(self, "ServerRole", server["role_name"])
+        # Not "ServerRole": isabelle and snicksnack grant on the same box role, and CDK
+        # names the inline policy after the construct path, so same-named constructs
+        # would overwrite each other's policy.
+        role = iam.Role.from_role_name(self, "BikeMyDayServerRole", server["role_name"])
         deploy_bucket.grant_read(role)
         # Reading /bike-my-day/* needs no grant here: the instance already has
         # AmazonSSMManagedInstanceCore, which allows ssm:GetParameter on *, and
