@@ -42,8 +42,10 @@ A phone keeps getting notifications with no action from its owner only if all of
 2. **Same VAPID key pair.** New keys end every subscription silently. The keys are in Vercel's
    environment and nowhere else we know of (no `.env.local` here, nothing in SSM). **Step 0
    below must succeed before any other work matters.**
-3. **`/sw.js` at the same path, scope `/`**, served with `Cache-Control: no-cache` (a CloudFront
-   response-headers policy on a `/sw.js` behaviour). Keep the push payload shape the worker reads.
+3. **`/sw.js` at the same path, scope `/`**, never served stale: a `/sw.js` behaviour with caching
+   disabled at the edge, and both the old and new client register it with
+   `updateViaCache: "none"` (so the 5-minute max-age on the object is ignored for update checks).
+   Keep the push payload shape the worker reads.
 4. **Subscription rows migrated with the user's id**, so the nightly job has them before anyone
    opens the app.
 5. **The client re-sends its subscription on every app open** (after login). Today it only checks
@@ -75,7 +77,10 @@ Status as of 2026-11-12: steps 1–3 are built and tested locally on branch
 3. [x] **Infra + scripts** (`infra/app.py`, `scripts/provision.sh`, `deploy-server.sh`,
    `deploy-web.sh`, `push-env.sh`). `cdk synth` is clean. Port 8004 and the 05:17 UTC backup
    slot are confirmed by korist-infra (its port map, 21679e2).
-4. [ ] **Rehearse.** `cd infra && npx aws-cdk deploy BikeMyDayCert BikeMyDay` (cutover stays
+4. [ ] **Rehearse.** Deployed 2026-11-12 at https://d9b8t5yetmy9j.cloudfront.net; smoke test
+   passes (SPA paths, `/sw.js`, `/api/*` with bearer, API 404s stay JSON, push key sha256
+   `46b93022`); on the box the old notify timer is still on and the new forecast timer off.
+   Left: the operator's own test below. `cd infra && npx aws-cdk deploy BikeMyDayCert BikeMyDay` (cutover stays
    false in `cdk.json`: the live record is untouched), `scripts/deploy-server.sh` (nightly run
    stays off), `scripts/deploy-web.sh`. Test on the `OutCloudFrontUrl` with the operator's
    account: login mail arrives from noreply@korist.se, rides, preview, a test push.

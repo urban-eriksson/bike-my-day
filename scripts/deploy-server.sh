@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 ENABLE_FORECAST=no
 [ "${1:-}" = "--enable-forecast" ] && ENABLE_FORECAST=yes
 
-(cd server && uv run ruff check -q . && uv run pyright -q && uv run pytest -q)
+(cd server && uv run ruff check -q . && uv run pyright && uv run pytest -q)
 
 out() {
   aws cloudformation describe-stacks --region eu-north-1 --stack-name BikeMyDay \
