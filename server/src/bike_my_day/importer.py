@@ -129,8 +129,17 @@ def main(argv: list[str]) -> int:
         print("Export query for the Supabase SQL editor:\n" + EXPORT_SQL)
         return 2
     data = json.loads(Path(argv[0]).read_text())
-    if "export" in data:  # the SQL editor's download wraps the cell in its column name
+    # The SQL editor's download wraps the cell: a list of rows, each keyed by
+    # the column name, with the JSON sometimes left as a string.
+    if isinstance(data, list) and len(data) == 1:
+        data = data[0]
+    if isinstance(data, dict) and "export" in data:
         data = data["export"]
+    if isinstance(data, str):
+        data = json.loads(data)
+    if not isinstance(data, dict):
+        print("not an export: expected one JSON object with users, rides, …", file=sys.stderr)
+        return 1
     for table, count in run(data).items():
         print(f"{table}: {count}")
     return 0

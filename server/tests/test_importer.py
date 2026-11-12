@@ -95,3 +95,13 @@ def test_import_refuses_a_populated_database(tmp_path):
     importer.run(EXPORT["export"])
     with pytest.raises(SystemExit):
         importer.run(EXPORT["export"])
+
+
+def test_main_unwraps_the_sql_editor_download(tmp_path):
+    import json
+
+    path = tmp_path / "export.json"
+    path.write_text(json.dumps([{"export": json.dumps(EXPORT["export"])}]))
+    assert importer.main([str(path)]) == 0
+    with db.connect() as conn:
+        assert conn.execute("SELECT count(*) FROM rides").fetchone()[0] == 1
