@@ -1,58 +1,63 @@
 #!/usr/bin/env bash
-# Publish the app's runtime environment to SSM Parameter Store as a single
-# SecureString at /bike-my-day/env, which bike-my-day-server reads on every
-# start. Source of truth is .env.local, the same file used for the build.
+# Publish the API's secrets to SSM Parameter Store as one SecureString at
+# /bike-my-day/env, which provision.sh writes to /etc/bike-my-day/api.env on
+# every deploy. Values are never echoed.
 #
-# Run this whenever a secret changes, then `systemctl restart bike-my-day`
-# (deploy.sh does that anyway). Values are never echoed.
+# Source: .env.local at the repo root, with the names Vercel used, so the keys
+# can be pasted straight from the Vercel dashboard:
+#   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, ANTHROPIC_API_KEY
+# The VAPID pair must be the one the phones subscribed with: never generate a new one.
+#
+# BMD_SECRET (signs login tokens) is generated on first run and then kept
+# from the existing parameter; changing it only signs everybody out.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REGION=eu-north-1
 PARAM=/bike-my-day/env
 SOURCE=${1:-.env.local}
-
 [ -f "$SOURCE" ] || { echo "no $SOURCE — nothing to publish" >&2; exit 1; }
 
-# Everything the server needs at runtime. The NEXT_PUBLIC_* pair is here too:
-# those are inlined into the client bundle at build time, but the server reads
-# them as well when it constructs a Supabase client per request.
-BLOB=$(python3 - "$SOURCE" <<'PY'
-import shlex, sys
+EXISTING=$(aws ssm get-parameter --region "$REGION" --name "$PARAM" --with-decryption \
+  --query Parameter.Value --output text 2>/dev/null || true)
 
-WANTED = [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "ANTHROPIC_API_KEY",
-    "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
-    "VAPID_PRIVATE_KEY",
-    "VAPID_SUBJECT",
-    "CRON_SECRET",
-    "ADMIN_EMAIL",
-]
+BLOB=$(EXISTING="$EXISTING" python3 - "$SOURCE" <<'PY'
+import os, secrets, shlex, sys
 
-found = {}
-for line in open(sys.argv[1], encoding="utf-8"):
-    line = line.strip()
-    if not line or line.startswith("#") or "=" not in line:
-        continue
-    key, _, value = line.partition("=")
-    key = key.strip()
-    if key in WANTED:
-        # .env files may or may not quote; strip one matched pair if present.
+RENAMES = {
+    "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "BMD_VAPID_PUBLIC",
+    "VAPID_PRIVATE_KEY": "BMD_VAPID_PRIVATE",
+    "VAPID_SUBJECT": "BMD_VAPID_SUBJECT",
+    "ANTHROPIC_API_KEY": "ANTHROPIC_API_KEY",
+}
+
+def parse(lines):
+    out = {}
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
         value = value.strip()
         if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
             value = value[1:-1]
-        found[key] = value
+        out[key.strip()] = value
+    return out
 
-# ADMIN_EMAIL is documented as optional; everything else is load-bearing and a
-# server that boots without it fails later, in the dark, on a rider's morning.
-missing = [k for k in WANTED if k != "ADMIN_EMAIL" and not found.get(k)]
+source = parse(open(sys.argv[1], encoding="utf-8"))
+existing = parse(os.environ.get("EXISTING", "").splitlines())
+
+found = {new: source[old] for old, new in RENAMES.items() if source.get(old)}
+missing = [old for old, new in RENAMES.items() if new not in found and old != "VAPID_SUBJECT"]
 if missing:
     sys.exit("missing from " + sys.argv[1] + ": " + ", ".join(missing))
 
-print("\n".join(f"{k}={shlex.quote(found[k])}" for k in WANTED if k in found))
+if existing.get("BMD_VAPID_PRIVATE") and existing["BMD_VAPID_PRIVATE"] != found["BMD_VAPID_PRIVATE"]:
+    sys.exit("refusing: this would replace the VAPID key already in " + "/bike-my-day/env"
+             + " and silently end every phone's push subscription")
+
+found["BMD_SECRET"] = existing.get("BMD_SECRET") or secrets.token_urlsafe(48)
+print("\n".join(f"{k}={shlex.quote(v)}" for k, v in sorted(found.items())))
 PY
 )
 
@@ -60,5 +65,5 @@ aws ssm put-parameter --region "$REGION" --name "$PARAM" --type SecureString \
   --value "$BLOB" --overwrite --output text --query Version > /dev/null
 
 # Report shape, never contents.
-echo "$PARAM updated: $(printf '%s' "$BLOB" | grep -c .) keys, $(printf '%s' "$BLOB" | wc -c) bytes"
+echo "$PARAM updated: $(printf '%s' "$BLOB" | grep -c .) keys"
 printf '%s\n' "$BLOB" | cut -d= -f1 | sed 's/^/  /'

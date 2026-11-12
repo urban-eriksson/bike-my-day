@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="sv" class="h-full antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/apple-icon.png" />
+    <!-- Same path, name and start_url as the Next.js app had: installed home-screen
+         apps keep working across the move. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- viewport-fit=cover lets the sticky header extend under the iOS notch;
+         it re-adds the safe-area inset itself. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Matches --background so the status bar blends in standalone mode. -->
+    <meta name="theme-color" content="#f6fbf8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="bike my day" />
+    <title>bike my day</title>
+  </head>
+  <body class="min-h-full flex flex-col">
+    <div id="root" class="flex min-h-full flex-1 flex-col"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

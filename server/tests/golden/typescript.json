@@ -1,0 +1,158 @@
+{
+  "one_way_sv": {
+    "input": {
+      "rideLabel": "Morning commute",
+      "start": {
+        "lat": 59.86,
+        "lon": 17.64
+      },
+      "end": {
+        "lat": 59.33,
+        "lon": 18.07
+      },
+      "preferences": "  I hate riding under 5 °C.  ",
+      "snapshot": {
+        "as_of_local": "2026-04-27T08:00",
+        "timezone": "Europe/Stockholm",
+        "temperature_c": 3.6,
+        "apparent_temperature_c": -1.5,
+        "precipitation_probability_pct": 0,
+        "precipitation_mm": 0,
+        "weather_code": 3,
+        "cloud_cover_pct": 87,
+        "wind_speed_ms": 4.7,
+        "wind_direction_from_deg": 342,
+        "wind_gusts_ms": 9.1,
+        "is_day": true,
+        "sunrise_local": "2026-04-27T05:30",
+        "sunset_local": "2026-04-27T20:45"
+      },
+      "locale": "sv"
+    },
+    "prompt": {
+      "system": "You are the forecast generator for a bike-commute weather app.\n\nYou receive (a) a structured weather snapshot for a specific hour and place, including wind decomposed into headwind / crosswind along the rider's route, and (b) the user's own free-text preferences describing what makes or breaks a ride for them.\n\nYour output has EXACTLY this shape — a score line, then the text:\n\nSCORE: <integer 0-5>\n<one or at most two short sentences>\n\nThe score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. When a return leg is given, cover BOTH legs in the text (out first, then return) and make the score reflect the WORSE leg — the rider commits to the whole day. The text is plain prose — no Markdown, no emoji, no preamble — and:\n\n- Tells the rider whether tomorrow's ride looks good, marginal, or bad, consistent with the score.\n- Names the one or two factors that drove that judgment, in concrete numbers (°C, mm, m/s, compass direction).\n- Honors the user's preferences over generic norms — if they say \"fine in light rain\", do not flag light rain as bad; if they say \"headwind over 8 m/s is a no\", flag any forecast above that.\n- Uses headwind / tailwind language directly (the wind component along their leg is given to you — do not re-derive it from raw direction).\n\nDo not hedge with \"you might want to consider\". Be direct. The rider will read this in 2 seconds and decide.\n\nWrite the text in Swedish (svenska), in natural idiomatic prose — not translated-sounding English. Use Swedish weather vocabulary (motvind, medvind, byar, nederbörd, halka). Keep the units as given (°C, mm, m/s) and keep the compass direction as the short code you are given. The SCORE line itself stays exactly as specified, in English.",
+      "user": "Ride: Morning commute\n\nHour: 2026-04-27T08:00 (Europe/Stockholm)\nLeg bearing: 157° (SSE)\nTemperature: 3.6 °C (feels like -1.5 °C)\nPrecipitation: 0 mm (0% chance)\nCloud cover: 87%\nWind: 4.7 m/s from 342° (NNW), tailwind 4.7 m/s, crosswind 0.4 m/s from the left\nGusts: 9.1 m/s, gusting to 9.1 m/s tailwind\nDaylight at depart: yes (sunrise 2026-04-27T05:30, sunset 2026-04-27T20:45)\nWMO weather code: 3\n\nUser preferences (free text — let these override generic norms):\nI hate riding under 5 °C."
+    }
+  },
+  "round_trip_en": {
+    "input": {
+      "rideLabel": "Jobbet",
+      "start": {
+        "lat": 59.3293,
+        "lon": 18.0686
+      },
+      "end": {
+        "lat": 59.4,
+        "lon": 17.95
+      },
+      "preferences": "",
+      "snapshot": {
+        "as_of_local": "2026-04-27T08:00",
+        "timezone": "Europe/Stockholm",
+        "temperature_c": 3.6,
+        "apparent_temperature_c": -1.5,
+        "precipitation_probability_pct": 0,
+        "precipitation_mm": 0,
+        "weather_code": 3,
+        "cloud_cover_pct": 87,
+        "wind_speed_ms": 4.7,
+        "wind_direction_from_deg": 342,
+        "wind_gusts_ms": 9.1,
+        "is_day": true,
+        "sunrise_local": "2026-04-27T05:30",
+        "sunset_local": "2026-04-27T20:45"
+      },
+      "returnSnapshot": {
+        "as_of_local": "2026-04-27T17:00",
+        "timezone": "Europe/Stockholm",
+        "temperature_c": 9.25,
+        "apparent_temperature_c": -1.5,
+        "precipitation_probability_pct": null,
+        "precipitation_mm": 0.35,
+        "weather_code": 3,
+        "cloud_cover_pct": 87,
+        "wind_speed_ms": 6.05,
+        "wind_direction_from_deg": 200,
+        "wind_gusts_ms": 12,
+        "is_day": false,
+        "sunrise_local": "2026-04-27T05:30",
+        "sunset_local": "2026-04-27T20:45"
+      },
+      "locale": "en"
+    },
+    "prompt": {
+      "system": "You are the forecast generator for a bike-commute weather app.\n\nYou receive (a) a structured weather snapshot for a specific hour and place, including wind decomposed into headwind / crosswind along the rider's route, and (b) the user's own free-text preferences describing what makes or breaks a ride for them.\n\nYour output has EXACTLY this shape — a score line, then the text:\n\nSCORE: <integer 0-5>\n<one or at most two short sentences>\n\nThe score rates how good the ride will be, honoring the user's preferences: 5 = perfect conditions, 3 = rideable but flawed, 0 = don't ride. When a return leg is given, cover BOTH legs in the text (out first, then return) and make the score reflect the WORSE leg — the rider commits to the whole day. The text is plain prose — no Markdown, no emoji, no preamble — and:\n\n- Tells the rider whether tomorrow's ride looks good, marginal, or bad, consistent with the score.\n- Names the one or two factors that drove that judgment, in concrete numbers (°C, mm, m/s, compass direction).\n- Honors the user's preferences over generic norms — if they say \"fine in light rain\", do not flag light rain as bad; if they say \"headwind over 8 m/s is a no\", flag any forecast above that.\n- Uses headwind / tailwind language directly (the wind component along their leg is given to you — do not re-derive it from raw direction).\n\nDo not hedge with \"you might want to consider\". Be direct. The rider will read this in 2 seconds and decide.\n\nWrite the text in English.",
+      "user": "Ride: Jobbet\n\n=== Outbound leg ===\nHour: 2026-04-27T08:00 (Europe/Stockholm)\nLeg bearing: 320° (NW)\nTemperature: 3.6 °C (feels like -1.5 °C)\nPrecipitation: 0 mm (0% chance)\nCloud cover: 87%\nWind: 4.7 m/s from 342° (NNW), headwind 4.3 m/s, crosswind 1.8 m/s from the right\nGusts: 9.1 m/s, gusting to 8.4 m/s headwind\nDaylight at depart: yes (sunrise 2026-04-27T05:30, sunset 2026-04-27T20:45)\nWMO weather code: 3\n\n=== Return leg ===\nHour: 2026-04-27T17:00 (Europe/Stockholm)\nLeg bearing: 139° (SE)\nTemperature: 9.3 °C (feels like -1.5 °C)\nPrecipitation: 0.35 mm\nCloud cover: 87%\nWind: 6.1 m/s from 200° (SSW), headwind 3 m/s, crosswind 5.3 m/s from the right\nGusts: 12 m/s, gusting to 5.9 m/s headwind\nDaylight at depart: no (sunrise 2026-04-27T05:30, sunset 2026-04-27T20:45)\nWMO weather code: 3\n\nUser preferences (free text — let these override generic norms):\n(none — apply sensible defaults)"
+    }
+  },
+  "push": [
+    {
+      "title": "Jobbet — ⭐⭐⭐⭐☆",
+      "body": "Bra.\n14 °C (feels 12.5) · 0 mm · 3.2 m/s (gusts 7)",
+      "url": "/rides/x/forecast"
+    },
+    {
+      "title": "Jobbet — 08:00",
+      "body": "Hm.",
+      "url": "/dashboard"
+    }
+  ],
+  "next": [
+    {
+      "days": [
+        0
+      ],
+      "time": "08:00",
+      "tz": "Europe/Stockholm",
+      "now": "2026-03-28T12:00:00.000Z",
+      "at": "2026-03-29T06:00:00.000Z"
+    },
+    {
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "time": "07:15:00",
+      "tz": "America/New_York",
+      "now": "2026-03-28T12:00:00.000Z",
+      "at": "2026-03-30T11:15:00.000Z"
+    }
+  ],
+  "compass": [
+    [
+      0,
+      "N"
+    ],
+    [
+      11.24,
+      "N"
+    ],
+    [
+      11.25,
+      "NNE"
+    ],
+    [
+      33.75,
+      "NE"
+    ],
+    [
+      348.75,
+      "N"
+    ],
+    [
+      359.9,
+      "N"
+    ],
+    [
+      -10,
+      "N"
+    ],
+    [
+      720,
+      "N"
+    ]
+  ]
+}
