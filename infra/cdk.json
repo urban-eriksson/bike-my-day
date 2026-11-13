@@ -2,6 +2,6 @@
   "app": "uv run python app.py",
   "context": {
     "@aws-cdk/core:newStyleStackSynthesis": true,
-    "cutover": "false"
+    "cutover": "true"
   }
 }
