@@ -62,7 +62,9 @@ the token (sliding expiry). The preview endpoint costs one Claude call per reque
 
 **Web**: one route per old Next.js page, under `src/views/`. `lib/session.tsx` loads `/api/me` and
 then re-sends the device's push subscription (`lib/push.ts`) on every open, so a lost
-subscription heals itself. `lib/i18n/` holds both dictionaries (sv default). Language is
+subscription heals itself. One device per rider (unique index): turning notifications on (`take_over`)
+replaces any other, a replaced device drops its subscription on open, and sign-out releases it.
+`lib/i18n/` holds both dictionaries (sv default). Language is
 localStorage, then the old `lang` cookie, then the browser; switching also saves
 `profiles.locale` for the nightly run. API errors map to dictionary strings in `lib/errors.ts`.
 
