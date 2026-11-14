@@ -96,7 +96,7 @@ const en = {
     savePrefs: "Save preferences",
     notificationsHeading: "Notifications",
     notificationsHelp:
-      "Get each forecast as a push notification on this device. Enable it on every device you want notified.",
+      "Get each forecast as a push notification on this device. Only one device gets them: turning them on here turns them off on any other.",
   },
   push: {
     checking: "Checking notification support…",
@@ -181,11 +181,11 @@ const en = {
     pickDay: "Pick at least one day of the week.",
     wrongCode: "That code is wrong or has expired.",
     tooManyCodes: "Too many codes requested. Wait a few minutes and try again.",
-    noDevices: "No subscribed devices — enable push notifications in Preferences first.",
+    noDevices: "Notifications are not on for any device — turn them on in Preferences first.",
     allExpired: "All subscriptions had expired — enable push notifications again in Preferences.",
     pushFailed: "Push failed. Try again later.",
     saved: "Saved.",
-    pushed: (n: number) => `Pushed to ${n} device(s).`,
+    pushed: "Sent to your device.",
   },
   meta: {
     home: "bike my day",
@@ -288,7 +288,7 @@ const sv: Dictionary = {
     savePrefs: "Spara inställningar",
     notificationsHeading: "Notiser",
     notificationsHelp:
-      "Få varje prognos som en notis på den här enheten. Slå på det på varje enhet du vill bli notifierad på.",
+      "Få varje prognos som en notis på den här enheten. Bara en enhet får notiser: slår du på dem här stängs de av på andra enheter.",
   },
   push: {
     checking: "Kollar stöd för notiser…",
@@ -372,11 +372,11 @@ const sv: Dictionary = {
     pickDay: "Välj minst en veckodag.",
     wrongCode: "Koden är fel eller har gått ut.",
     tooManyCodes: "För många koder begärda. Vänta några minuter och försök igen.",
-    noDevices: "Inga enheter prenumererar — slå på notiser under Inställningar först.",
+    noDevices: "Notiser är inte påslagna på någon enhet — slå på dem under Inställningar först.",
     allExpired: "Alla prenumerationer har gått ut — slå på notiser igen under Inställningar.",
     pushFailed: "Notisen kunde inte skickas. Försök igen senare.",
     saved: "Sparat.",
-    pushed: (n: number) => `Skickat till ${n} enhet(er).`,
+    pushed: "Skickad till din enhet.",
   },
   meta: {
     home: "bike my day",

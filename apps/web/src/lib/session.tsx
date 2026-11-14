@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { api, getToken, type Me, type Profile, setToken, setUnauthorizedHandler } from "./api";
-import { syncSubscription } from "./push";
+import { releaseDevice, syncSubscription } from "./push";
 
 type Session =
   | { status: "loading" }
@@ -21,7 +21,7 @@ type SessionContext = {
   session: Session;
   /** After a successful code verification. */
   signIn: (token: string) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   /** Re-read /api/me, e.g. after saving preferences. */
   refresh: () => Promise<void>;
   setProfile: (profile: Profile) => void;
@@ -63,7 +63,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setToken(token);
         await load();
       },
-      signOut: () => {
+      signOut: async () => {
+        await releaseDevice();
         setToken(null);
         setSession({ status: "signed-out" });
       },

@@ -362,6 +362,7 @@ class Keys(BaseModel):
 class SubscriptionIn(BaseModel):
     endpoint: str = Field(max_length=2048, pattern=r"^https://")
     keys: Keys
+    take_over: bool = False
 
 
 class EndpointIn(BaseModel):
@@ -370,14 +371,25 @@ class EndpointIn(BaseModel):
 
 @app.put("/api/subscriptions")
 def save_subscription(body: SubscriptionIn, user: CurrentUser, conn: Db) -> dict[str, bool]:
-    """Called on every app open, not just when the rider enables push: a
-    subscription the server lost (or one that moved to another account on this
-    phone) heals itself the next time the app is opened."""
+    """One device per rider: the one where notifications were most recently
+    turned on. Turning them on (take_over) replaces any other device. The app
+    also re-sends its subscription on every open; that only refreshes this
+    device, or claims the slot when the rider has none (so a subscription the
+    server lost heals itself), and otherwise answers subscribed=False so the app
+    shows notifications as off here."""
+    current = conn.execute(
+        "SELECT endpoint FROM push_subscriptions WHERE user_id = ?", (user.id,)
+    ).fetchone()
+    if current and current["endpoint"] != body.endpoint and not body.take_over:
+        return {"subscribed": False}
+    # The endpoint may belong to another account that used this phone before.
+    conn.execute(
+        "DELETE FROM push_subscriptions WHERE user_id = ? OR endpoint = ?",
+        (user.id, body.endpoint),
+    )
     conn.execute(
         """INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?)
-           ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id,
-           p256dh = excluded.p256dh, auth = excluded.auth, updated_at = excluded.updated_at""",
+           VALUES (?, ?, ?, ?, ?, ?)""",
         (db.new_id(), user.id, body.endpoint, body.keys.p256dh, body.keys.auth, db.now_iso()),
     )
     return {"subscribed": True}

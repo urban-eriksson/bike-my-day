@@ -119,6 +119,48 @@ def test_profile():
 SUB = {"endpoint": "https://push.example/abc", "keys": {"p256dh": "p", "auth": "a"}}
 
 
+PHONE = {**SUB, "endpoint": "https://push.example/phone"}
+MAC = {**SUB, "endpoint": "https://push.example/mac"}
+
+
+def endpoints():
+    with db.connect() as conn:
+        return [r["endpoint"] for r in conn.execute("SELECT endpoint FROM push_subscriptions")]
+
+
+def test_one_device_per_rider_the_last_one_turned_on():
+    h = login()
+    put = lambda body: c.put("/api/subscriptions", json=body, headers=h).json()  # noqa: E731
+    # Opening the app with nothing on file claims the slot (a lost one heals).
+    assert put(PHONE) == {"subscribed": True}
+    # Opening the app on another device that still holds a subscription does
+    # not steal notifications from the phone; it is told it is off.
+    assert put(MAC) == {"subscribed": False}
+    assert endpoints() == [PHONE["endpoint"]]
+    # Turning notifications on there does.
+    assert put({**MAC, "take_over": True}) == {"subscribed": True}
+    assert endpoints() == [MAC["endpoint"]]
+    assert put(PHONE) == {"subscribed": False}
+
+
+def test_migration_keeps_each_riders_newest_device(tmp_path, monkeypatch):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    monkeypatch.setattr(db.config, "DB_PATH", str(path))
+    old = sqlite3.connect(path)
+    old.executescript(db.SCHEMA)
+    old.execute("INSERT INTO users (id, email, created_at) VALUES ('u', 'u@example.com', 'x')")
+    for sid, stamp in (("old", "2026-07-27T00:00:00Z"), ("new", "2026-11-14T00:00:00Z")):
+        old.execute(
+            "INSERT INTO push_subscriptions VALUES (?, 'u', ?, 'p', 'a', ?)", (sid, sid, stamp)
+        )
+    old.commit()
+    old.close()
+    with db.connect() as conn:
+        assert [r[0] for r in conn.execute("SELECT id FROM push_subscriptions")] == ["new"]
+
+
 def test_subscription_moves_between_accounts_on_one_phone():
     a, b = login("a@example.com"), login("b@example.com")
     c.put("/api/subscriptions", json=SUB, headers=a)

@@ -74,7 +74,7 @@ function PushButton({ preview }: { preview: Preview }) {
     setPending(true);
     setStatus(null);
     try {
-      const res = await api<{ sent: number }>(`/rides/${preview.ride.id}/push`, {
+      await api(`/rides/${preview.ride.id}/push`, {
         method: "POST",
         body: {
           text: preview.text,
@@ -89,7 +89,7 @@ function PushButton({ preview }: { preview: Preview }) {
           },
         },
       });
-      setStatus({ text: t.errors.pushed(res.sent), isError: false });
+      setStatus({ text: t.errors.pushed, isError: false });
     } catch (err) {
       setStatus({ text: errorText(err, t), isError: true });
     } finally {

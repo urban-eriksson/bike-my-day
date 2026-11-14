@@ -55,7 +55,7 @@ export function AppHeader({ back = false }: { back?: boolean }) {
     setPending(true);
     try {
       await api("/me", { method: "DELETE" });
-      signOut();
+      await signOut();
       navigate("/");
     } finally {
       setPending(false);
@@ -97,8 +97,8 @@ export function AppHeader({ back = false }: { back?: boolean }) {
               <Languages /> {t.nav.switchTo}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() => {
-                signOut();
+              onSelect={async () => {
+                await signOut();
                 navigate("/login");
               }}
             >

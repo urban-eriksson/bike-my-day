@@ -48,7 +48,11 @@ export async function subscribe(): Promise<void> {
     applicationServerKey: urlBase64ToUint8Array(key),
   });
   try {
-    await api("/subscriptions", { method: "PUT", body: toBody(subscription) });
+    // Turning notifications on here moves them off any other device.
+    await api("/subscriptions", {
+      method: "PUT",
+      body: { ...toBody(subscription), take_over: true },
+    });
   } catch (err) {
     await subscription.unsubscribe();
     throw err;
@@ -66,18 +70,51 @@ export async function unsubscribe(): Promise<void> {
 /**
  * Re-sends this device's subscription on every app open. The old app only
  * checked the browser, so a subscription the server had lost showed as "on"
- * and silently got nothing; this heals it. Best effort and silent.
+ * and silently got nothing; this heals it. Only one device per rider gets
+ * notifications: if another one has taken over, this device drops its
+ * subscription so the toggle shows "off" here. Best effort and silent.
  */
-export async function syncSubscription(): Promise<void> {
+export function syncSubscription(): Promise<void> {
+  lastSync = sync();
+  return lastSync;
+}
+
+/** Settles when the latest sync has, so the toggle reads the result of it. */
+export let lastSync: Promise<void> = Promise.resolve();
+
+async function sync(): Promise<void> {
   if (!pushSupported() || Notification.permission !== "granted") return;
   try {
     const registration = await registerWorker();
     const subscription = await registration.pushManager.getSubscription();
-    if (subscription) {
-      await api("/subscriptions", { method: "PUT", body: toBody(subscription) });
-    }
+    if (!subscription) return;
+    const res = await api<{ subscribed: boolean }>("/subscriptions", {
+      method: "PUT",
+      body: toBody(subscription),
+    });
+    if (!res.subscribed) await subscription.unsubscribe();
   } catch {
     // Next open tries again.
+  }
+}
+
+/**
+ * On sign-out: this device stops getting the rider's notifications. Must run
+ * while the token is still set. Never waits on a worker that was never registered.
+ */
+export async function releaseDevice(): Promise<void> {
+  if (!pushSupported()) return;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/");
+    const subscription = await registration?.pushManager.getSubscription();
+    if (!subscription) return;
+    await api("/subscriptions", {
+      method: "DELETE",
+      body: { endpoint: subscription.endpoint },
+    }).catch(() => {});
+    await subscription.unsubscribe();
+  } catch {
+    // Signing out must not fail on this.
   }
 }
 

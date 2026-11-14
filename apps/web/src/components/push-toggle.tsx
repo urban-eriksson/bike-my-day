@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { reasonText } from "@/lib/errors";
 import { useT } from "@/lib/i18n/provider";
-import { pushSupported, registerWorker, subscribe, unsubscribe, vapidPublicKey } from "@/lib/push";
+import {
+  lastSync,
+  pushSupported,
+  registerWorker,
+  subscribe,
+  unsubscribe,
+  vapidPublicKey,
+} from "@/lib/push";
 
 type PushState =
   | { phase: "loading" }
@@ -40,6 +47,8 @@ export function PushToggle({
         return;
       }
       try {
+        // The open-time sync may have found another device in charge.
+        await lastSync;
         const registration = await registerWorker();
         const subscription = await registration.pushManager.getSubscription();
         if (!cancelled) setState({ phase: subscription ? "subscribed" : "idle" });

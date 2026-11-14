@@ -84,14 +84,20 @@ def run(data: dict[str, Any]) -> dict[str, int]:
                     utc(r["created_at"]),
                 ),  # fmt: skip
             )
-        for c in data["notification_channels"]:
+        # One device per rider: the newest wins, the rest hit the unique index.
+        channels = sorted(
+            data["notification_channels"],
+            key=lambda c: c.get("updated_at") or c["created_at"],
+            reverse=True,
+        )
+        for c in channels:
             dest = c.get("destination") or {}
             keys = dest.get("keys") or {}
             if not (dest.get("endpoint") and keys.get("p256dh") and keys.get("auth")):
                 continue  # malformed rows were skipped by the old cron too
             conn.execute(
                 """INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO NOTHING""",
+                   VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING""",
                 (
                     c["id"],
                     c["user_id"],

@@ -109,7 +109,23 @@ def ride_out(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """Additive schema changes for databases created before them."""
+    """Schema changes for databases created before them."""
+    # One push device per rider (2026-11): keep each rider's most recent one.
+    # Not in SCHEMA, which runs first and would fail on the duplicates.
+    if not conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE name = 'push_subscriptions_one_per_user'"
+    ).fetchone():
+        conn.execute(
+            """DELETE FROM push_subscriptions WHERE id NOT IN (
+                 SELECT id FROM (
+                   SELECT id, row_number() OVER (
+                     PARTITION BY user_id ORDER BY updated_at DESC, id) AS n
+                   FROM push_subscriptions)
+                 WHERE n = 1)"""
+        )
+        conn.execute(
+            "CREATE UNIQUE INDEX push_subscriptions_one_per_user ON push_subscriptions(user_id)"
+        )
 
 
 @contextmanager
