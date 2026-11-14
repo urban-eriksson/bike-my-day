@@ -164,11 +164,23 @@ class BikeMyDayStack(Stack):
         s3_origin = origins.S3BucketOrigin.with_origin_access_control(web_bucket)
         # The service worker must never be served stale: a phone stuck on an old
         # worker is painful to fix. Browsers already skip their HTTP cache for it
-        # (updateViaCache: "none"); this keeps the edge from caching it too.
+        # (updateViaCache: "none"); this keeps the edge from caching it too, and
+        # replaces the bucket's 5-minute max-age so the header says the same.
         sw_behavior = cloudfront.BehaviorOptions(
             origin=s3_origin,
             viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+            response_headers_policy=cloudfront.ResponseHeadersPolicy(
+                self,
+                "SwNoCache",
+                custom_headers_behavior=cloudfront.ResponseCustomHeadersBehavior(
+                    custom_headers=[
+                        cloudfront.ResponseCustomHeader(
+                            header="Cache-Control", value="no-cache", override=True
+                        )
+                    ]
+                ),
+            ),
         )
         distribution = cloudfront.Distribution(
             self,

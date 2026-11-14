@@ -70,7 +70,7 @@ User=bike-my-day
 WorkingDirectory=/opt/bike-my-day/app
 EnvironmentFile=/etc/bike-my-day/api.env
 EnvironmentFile=/etc/bike-my-day/api.settings
-ExecStart=/usr/local/bin/uv run --frozen --no-dev uvicorn bike_my_day.main:app --host 127.0.0.1 --port $PORT --proxy-headers
+ExecStart=/opt/bike-my-day/app/.venv/bin/uvicorn bike_my_day.main:app --host 127.0.0.1 --port $PORT --proxy-headers
 Restart=always
 RestartSec=3
 
@@ -90,7 +90,7 @@ User=bike-my-day
 WorkingDirectory=/opt/bike-my-day/app
 EnvironmentFile=/etc/bike-my-day/api.env
 EnvironmentFile=/etc/bike-my-day/api.settings
-ExecStart=/usr/local/bin/uv run --frozen --no-dev python -m bike_my_day.notify
+ExecStart=/opt/bike-my-day/app/.venv/bin/python -m bike_my_day.notify
 EOF
 
 # Persistent=true: if the box is down at 04:00 the run happens at boot rather
