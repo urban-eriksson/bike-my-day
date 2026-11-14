@@ -171,13 +171,20 @@ def run_verdict(
         return_snapshot,
         locale,
     )
+    # Haiku 5.5 thinks by default and thinking counts toward max_tokens, so the
+    # cap leaves room for it; the answer itself is a few hundred tokens at most.
     response = (client or _anthropic()).messages.create(
         model=config.VERDICT_MODEL,
-        max_tokens=256,
+        max_tokens=4000,
+        output_config={"effort": config.VERDICT_EFFORT},
         system=system,
         messages=[{"role": "user", "content": user}],
     )
+    if response.stop_reason == "refusal":
+        raise RuntimeError("verdict declined by the model's safety classifiers")
     raw = "".join(b.text for b in response.content if b.type == "text")
+    if not raw.strip():
+        raise RuntimeError(f"verdict came back without text (stop_reason {response.stop_reason})")
     text, score = parse_output(raw)
     return VerdictRun(
         text=text,

@@ -68,15 +68,21 @@ class FakeProvider:
 
 
 class FakeClient:
-    def __init__(self, text):
+    def __init__(self, text, stop_reason="end_turn"):
         self.sent = []
         self.messages = self
         self.text = text
+        self.stop_reason = stop_reason
 
     def create(self, **kwargs):
         self.sent.append(kwargs)
+        # Haiku 5.5 may think first: the answer is not necessarily content[0].
+        content = [SimpleNamespace(type="thinking", thinking="")]
+        if self.text:
+            content.append(SimpleNamespace(type="text", text=self.text))
         return SimpleNamespace(
-            content=[SimpleNamespace(type="text", text=self.text)],
+            content=content,
+            stop_reason=self.stop_reason,
             usage=SimpleNamespace(input_tokens=100, output_tokens=20),
         )
 
@@ -99,9 +105,28 @@ def test_run_verdict_round_trip():
         (59.4, 17.95, "2026-04-27T17:00"),
     ]
     sent = client.sent[0]
-    assert sent["model"] == "claude-haiku-4-5"
+    assert sent["model"] == "claude-haiku-5-5"
+    assert sent["output_config"] == {"effort": "low"}
     assert "=== Return leg ===" in sent["messages"][0]["content"]
     assert "Swedish" in sent["system"]
+
+
+@pytest.mark.parametrize(
+    ("text", "stop_reason"), [("", "refusal"), ("", "max_tokens")], ids=["refusal", "only-thinking"]
+)
+def test_run_verdict_fails_loudly_without_an_answer(text, stop_reason):
+    # Callers skip the ride (nightly) or answer 502 (preview) instead of
+    # pushing an empty notification.
+    client = FakeClient(text, stop_reason)
+    with pytest.raises(RuntimeError):
+        verdict.run_verdict(
+            RIDE,
+            "",
+            "sv",
+            datetime(2026, 4, 26, 20, tzinfo=UTC),
+            provider=FakeProvider(),
+            client=client,
+        )
 
 
 @pytest.mark.skipif("not config.getoption('--live')", reason="hits Photon and Open-Meteo")

@@ -31,7 +31,9 @@ VAPID_PRIVATE = os.environ.get("BMD_VAPID_PRIVATE", "")
 VAPID_SUBJECT = os.environ.get("BMD_VAPID_SUBJECT", "mailto:support@korist.se")
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-VERDICT_MODEL = os.environ.get("BMD_VERDICT_MODEL", "claude-haiku-4-5")
+VERDICT_MODEL = os.environ.get("BMD_VERDICT_MODEL", "claude-haiku-5-5")
+# How much the model thinks before answering; a two-line verdict needs little.
+VERDICT_EFFORT = os.environ.get("BMD_VERDICT_EFFORT", "low")
 
 WEB_URL = os.environ.get("BMD_WEB_URL", "https://bike-my-day.korist.se")
 # Photon refuses generic client User-Agents (python-httpx gets a 403); the
