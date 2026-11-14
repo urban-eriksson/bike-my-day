@@ -89,11 +89,11 @@ Status as of 2026-11-12: steps 1–3 are built and tested locally on branch
    6 users, 5 profiles, 7 rides, 4 push subscriptions, 250 notifications). In the Supabase SQL editor run the query printed by
    `uv run python -m bike_my_day.importer`, save the result as `server/export.json`, copy it to
    the box and import it into an empty `/var/lib/bike-my-day/bike-my-day.db`. Compare counts.
-6. [ ] **Cutover** (one sitting, not near 04:00). Steps 1–4 done 2026-11-13 ~21:45–21:55
+6. [x] **Cutover** (one sitting, not near 04:00). Steps 1–4 done 2026-11-13 ~21:45–21:55
    CET: old timer disabled, import into a fresh database (the trial one is kept as
    `bike-my-day.db.trial-*`), record moved (`32e2b82`), forecast timer on with no catch-up run,
    and a dry run as of Monday 04:00 reaches the same 3 rides / 4 devices the old job did.
-   Left: step 5, the real-phone check.
+   Phone check passed 2026-11-14 (installed app kept its subscription; test push arrived).
    1. Stop the old trigger on the box: `systemctl disable --now bike-my-day-notify.timer`.
    2. Final export/import (step 5) into a fresh database.
    3. Set `"cutover": "true"` in `infra/cdk.json`, commit, `scripts/deploy-web.sh` (moves the
