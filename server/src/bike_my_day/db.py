@@ -114,7 +114,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(config.DB_PATH)
+    # FastAPI opens a request's connection, runs the endpoint and closes it in
+    # separate thread-pool calls, which land on different threads when two
+    # requests arrive together. Each request still owns its connection and uses
+    # it one step at a time, so sqlite3's same-thread check is only in the way.
+    conn = sqlite3.connect(config.DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     try:

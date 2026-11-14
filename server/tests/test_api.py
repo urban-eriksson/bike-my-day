@@ -241,3 +241,21 @@ def test_nightly_prunes_dead_subscriptions(monkeypatch):
     assert result["detail"] == "all subscriptions expired"
     with db.connect() as conn:
         assert conn.execute("SELECT count(*) FROM push_subscriptions").fetchone()[0] == 0
+
+
+def test_request_connection_survives_a_thread_switch():
+    # FastAPI may open, use and close a request's connection on three different
+    # pool threads; two requests at once made that happen in production.
+    from concurrent.futures import ThreadPoolExecutor
+
+    gen = db.get_db()
+    # All three pools stay alive so their threads (and thread ids) differ.
+    with (
+        ThreadPoolExecutor(max_workers=1) as a,
+        ThreadPoolExecutor(max_workers=1) as b,
+        ThreadPoolExecutor(max_workers=1) as c,
+    ):
+        conn = a.submit(next, gen).result()
+        count = b.submit(lambda: conn.execute("SELECT count(*) FROM rides").fetchone()[0])
+        assert count.result() == 0
+        c.submit(lambda: next(gen, None)).result()
