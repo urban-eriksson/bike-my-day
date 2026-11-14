@@ -107,7 +107,8 @@ Status as of 2026-11-12: steps 1–3 are built and tested locally on branch
    timer's files on the box and `CRON_SECRET` from SSM; delete the Next.js app (root
    `package.json`, `src/`, `supabase/`, `tests/`, `next.config.ts`, …), `provision-app.sh`,
    `deploy.sh`, `provision-notify-timer.sh`; update README, CLAUDE.md, AGENTS.md and
-   `../korist-infra/CLAUDE.md`.
+   `../korist-infra/CLAUDE.md`. Box-side removals (old timer files, `CRON_SECRET`) go to korist-infra as
+   an entry in `~/repos/INFRA-INBOX.md`; the cutover notice was posted there on 2026-11-14.
 
 Rollback until step 7: point DNS back at Vercel (`cutover` false + deploy, or the record by
 hand), disable `bike-my-day-forecast.timer`, re-enable `bike-my-day-notify.timer`. Never run
