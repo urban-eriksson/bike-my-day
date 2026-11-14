@@ -47,7 +47,7 @@ the server log. All server config is `BMD_*` env vars (`server/src/bike_my_day/c
 **Nightly run** (`notify.py`, systemd timer `bike-my-day-forecast` at 04:00 Europe/Stockholm):
 `schedule.select_due` picks active rides departing in the next 24 h (0 = Sunday, like the old
 schema), `verdict.run_verdict` fetches Open-Meteo at the start (and at the destination for the
-return hour) and asks Claude Haiku 4.5 for a `SCORE: n` line plus text in the rider's
+return hour) and asks Claude Haiku 5.5 (low effort) for a `SCORE: n` line plus text in the rider's
 `profiles.locale`, then `push.send_to_all` pushes and prunes 404/410 subscriptions. Network work
 runs in a pool of 5; database writes stay on the main thread. `notifications.unique(ride_id,
 scheduled_for)` plus `sent_at` make reruns idempotent.

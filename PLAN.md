@@ -116,7 +116,7 @@ both timers at once; `provision.sh` refuses to enable the new one while the old 
 ## Open questions
 
 - Port and backup slot on the dev box: needs a `korist-infra` session (see below).
-- Keep Claude Haiku 4.5 for verdicts, or change model? Out of scope unless asked.
+- Verdict model: switched to Claude Haiku 5.5 at low effort on 2026-11-14 (`ea19fd1`).
 
 ## What korist-infra has to do
 
